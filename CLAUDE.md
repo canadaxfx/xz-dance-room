@@ -5,6 +5,8 @@ A static page that helps the fan group learn Xiao Zhan's MV dances: slow the vid
 - **Local folder:** `XZ Dance Practice/` (the name is kept on purpose).
 - **Repo / site:** public repo `canadaxfx/xz-dance-room` → Cloudflare Pages `xz-dance-room.pages.dev` (live since 2026-10-06). Every push to `main` deploys automatically; there is no GitHub Pages mirror. Push with autosync's GitHub token (`C:\AI Tools\xz-autosync\config.json`, fine-grained, all repos, Contents read/write) passed as a one-off `http.extraheader` — never store it in the remote URL. That token cannot create repos (create new repos on github.com).
 - **Search engines:** findable, like the other XZ sites: `noai, noimageai` meta plus the shared AI-crawler `robots.txt`.
+- **Analytics:** Google Analytics GA4, measurement ID `G-T79K5T7M9N` (stream "xz-dance-room"), the same plain async gtag snippet as the other XZ sites. It never loads in mainland China, so expect low numbers from there.
+- **`_redirects`:** sends `/CLAUDE.md`, `/tools/*` and `/.gitignore` to the home page (301), so the notes and tools are only in the repo, not on the site. Add any new non-site file here.
 - **Local preview:** `.claude/launch.json` → `xz-dance-practice`, which runs `python -m http.server 8889`.
 
 ## Files
