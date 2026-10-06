@@ -34,6 +34,7 @@
     --tape:     #DCE3F0;   /* UI accent = white: selected outlines, bubbles, links, focus rings */
     --signal:   #FF1005;   /* fan support red, ONLY for: what you're looping now (part or A–B), the count-in */
     --signal-text: #FF4D45; /* same red, a touch lighter, for the header's English (small text: 5.4:1 on navy) */
+    --peri:     #8EA2FF;   /* periwinkle: decoration + links (left stripes, footer links); never means "selected" */
 
     --display: "Big Shoulders", "Arial Narrow", Impact, sans-serif;
     --body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
@@ -287,7 +288,7 @@
     display: inline-flex; align-items: center; gap: 6px;
     min-height: 40px; padding: 8px 14px;
     color: var(--mirror); text-decoration: none; font-weight: 600;
-    background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--tape);
+    background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--peri);
     border-radius: var(--radius);
   }
   /* the links wrap as one group, so on phones they sit side by side under the label */
@@ -301,7 +302,7 @@
     .sources .chips { gap: 6px; }
     .sources .chips a { padding: 8px 6px; font-size: 12px; gap: 4px; }
   }
-  .sources a:hover { border-color: var(--tape); color: var(--tape); }
+  .sources a:hover { border-color: var(--peri); color: var(--peri); }
   .sources a:focus-visible { outline: 3px solid var(--tape); outline-offset: 2px; }
 
   .notice {
@@ -564,7 +565,7 @@
     grid-template-columns: 1fr 1fr 0.8fr;
     gap: 8px;
   }
-  .ab-row button.set { border-left: 4px solid var(--tape); }
+  .ab-row button.set { border-left: 4px solid var(--peri); }
 
   /* ---------- mark mode (owner only, ?mark=1) ---------- */
   .mark {
@@ -617,7 +618,7 @@
   .intro {
     margin: 0 0 14px;
     padding: 10px 12px;
-    border-left: 4px solid var(--tape);
+    border-left: 4px solid var(--peri);
     background: rgba(20, 31, 69, .6);
     border-radius: 0 var(--radius) var(--radius) 0;
     color: var(--haze);
@@ -686,11 +687,11 @@
   }
   .foot p { margin: 0 0 8px; }
   .foot { text-align: center; }            /* whole footer centred; the opened terms list reads left-aligned */
-  .foot .owner { color: var(--mirror); font-weight: 600; margin-top: 16px; }
+  .foot .owner { color: var(--haze); font-weight: 500; margin-top: 16px; }
   .terms summary {
     display: inline-flex; align-items: center; gap: 6px;
     min-height: 36px; cursor: pointer; list-style: none;
-    color: var(--tape); font-size: 13px; font-weight: 600;
+    color: var(--peri); font-size: 13px; font-weight: 600;
   }
   .terms summary::-webkit-details-marker { display: none; }
   .terms summary::before { content: "▸"; transition: transform .15s; }
@@ -707,10 +708,11 @@
   .foot .more { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; font-size: 13px; }
   .foot .more .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; }   /* the two links wrap as a pair */
   .foot .more a {
-    color: var(--mirror); text-decoration: none; font-weight: 600; white-space: nowrap;
-    padding: 4px 0; border-bottom: 2px solid var(--tape);
+    color: var(--peri); text-decoration: none; font-weight: 600; white-space: nowrap;
+    padding: 4px 0; border-bottom: 1px solid rgba(142, 162, 255, .4);
   }
-  .foot .more a:hover { color: var(--tape); }
+  .foot .more a .en { color: var(--peri); opacity: .75; }
+  .foot .more a:hover { border-bottom-color: var(--peri); }
   .foot .more a:focus-visible { outline: 3px solid var(--tape); outline-offset: 2px; }
 
   @media (min-width: 720px) {
