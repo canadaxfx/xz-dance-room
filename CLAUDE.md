@@ -1,9 +1,10 @@
-# 肖战舞蹈练习室 · XZ Dance Room
+# XZ 舞蹈练习室 · Dance with Xiao Zhan (XZ Dance Room)
 
 A static page that helps the fan group learn Xiao Zhan's MV dances: slow the video down with the pitch kept, loop a dance part, mirror it, and hear a "5、6、7、8" count-in on the song's beat. The UI is in Chinese with small English underneath.
 
 - **Local folder:** `XZ Dance Practice/` (the name is kept on purpose).
-- **Planned repo / site:** `canadaxfx/xz-dance-room` → `xz-dance-room.pages.dev`. Neither exists yet.
+- **Repo / site:** public repo `canadaxfx/xz-dance-room` → Cloudflare Pages `xz-dance-room.pages.dev` (live since 2026-10-06). Every push to `main` deploys automatically; there is no GitHub Pages mirror. Push with autosync's GitHub token (`C:\AI Tools\xz-autosync\config.json`, fine-grained, all repos, Contents read/write) passed as a one-off `http.extraheader` — never store it in the remote URL. That token cannot create repos (create new repos on github.com).
+- **Search engines:** findable, like the other XZ sites: `noai, noimageai` meta plus the shared AI-crawler `robots.txt`.
 - **Local preview:** `.claude/launch.json` → `xz-dance-practice`, which runs `python -m http.server 8889`.
 
 ## Files
