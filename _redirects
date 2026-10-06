@@ -1,0 +1,4 @@
+# Cloudflare Pages: the project notes, tools and git files live in the repo only - don't serve them on the site
+/CLAUDE.md    /    301
+/tools/*      /    301
+/.gitignore   /    301
