@@ -31,8 +31,9 @@
     --line:     #26335F;
     --mirror:   #DCE3F0;   /* text */
     --haze:     #8592B5;   /* secondary text */
-    --tape:     #FFC93C;   /* spike tape: sections, the count, active state */
-    --hat:      #E8503A;   /* party hat: A–B loop markers */
+    --tape:     #DCE3F0;   /* UI accent = white: selected outlines, bubbles, links, focus rings */
+    --signal:   #FF1005;   /* fan support red, ONLY for: what you're looping now (part or A–B), the count-in */
+    --signal-text: #FF4D45; /* same red, a touch lighter, for the header's English (small text: 5.4:1 on navy) */
 
     --display: "Big Shoulders", "Arial Narrow", Impact, sans-serif;
     --body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
@@ -80,7 +81,7 @@
   .title .en {
     font-family: var(--display);
     font-weight: 800;
-    color: var(--tape);
+    color: var(--signal-text);
     letter-spacing: .08em;
     margin-left: 8px;
     font-size: 17px;
@@ -138,7 +139,7 @@
   .count.on { opacity: 1; }
   .count .num {
     font: 800 clamp(110px, 34vw, 260px)/0.8 var(--display);
-    color: var(--tape);
+    color: var(--signal);
     text-shadow: 0 6px 30px rgba(0, 0, 0, .55);
   }
   .count .num.hit { animation: hit .22s ease-out; }
@@ -152,7 +153,7 @@
     color: rgba(220, 227, 240, .35);
     letter-spacing: .05em;
   }
-  .count .row span.done { color: var(--tape); }
+  .count .row span.done { color: var(--signal); }
 
   /* ---------- fullscreen ---------- */
   .fs-btn {
@@ -228,9 +229,9 @@
     margin: 0 0 14px;
     padding: 10px 16px;
     min-height: 0;
-    background: var(--tape);
-    color: var(--corridor);
-    border: 0;
+    background: var(--panel);
+    color: var(--mirror);
+    border: 2px solid var(--tape);
     border-radius: 18px;
     font-weight: 700;
     font-size: 15px;
@@ -265,8 +266,9 @@
     justify-content: center;
     max-width: calc(100% - 24px);
     padding: 10px 12px 10px 16px;
-    background: var(--tape);
-    color: var(--corridor);
+    background: var(--panel);
+    color: var(--mirror);
+    border: 2px solid var(--tape);
     border-radius: 18px;
     font-weight: 700;
     font-size: 14px;
@@ -275,8 +277,8 @@
   }
   .nudge[hidden] { display: none; }
   .nudge button { min-height: 34px; padding: 4px 12px; font-size: 13px; border-radius: 999px; }
-  .nudge .go { background: var(--corridor); color: var(--tape); border-color: var(--corridor); }
-  .nudge .stay { background: transparent; color: var(--corridor); border-color: rgba(13, 23, 54, .35); }
+  .nudge .go { background: var(--mirror); color: var(--corridor); border-color: var(--mirror); }
+  .nudge .stay { background: transparent; color: var(--mirror); border-color: var(--line); }
 
   /* ---------- sources ---------- */
   .sources { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--haze); }
@@ -347,19 +349,22 @@
     top: 11px;
     height: 16px;
     background:
-      repeating-linear-gradient(90deg, rgba(255,255,255,.10) 0 2px, rgba(255,255,255,0) 2px 7px),
-      var(--tape);
-    opacity: .55;
+      repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 2px, rgba(255,255,255,0) 2px 7px),
+      #4A5A8C;
     border-radius: 2px;
   }
-  .track .tape.active { opacity: 1; }
+  .track .tape.active {          /* red = what you're looping right now */
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.10) 0 2px, rgba(255,255,255,0) 2px 7px),
+      var(--signal);
+  }
   .track .ab {
     position: absolute;
     top: 9px;
     height: 20px;
-    background: rgba(232, 80, 58, .28);
-    border-left: 3px solid var(--hat);
-    border-right: 3px solid var(--hat);
+    background: rgba(255, 16, 5, .30);      /* your own A–B is "what you're looping" too: same red */
+    border-left: 3px solid var(--signal);
+    border-right: 3px solid var(--signal);
   }
   .track .ab[hidden] { display: none; }
   .track .marker {
@@ -368,7 +373,7 @@
     width: 3px;
     height: 38px;
     margin-left: -1px;
-    background: var(--hat);
+    background: var(--signal);
   }
   .track .marker[hidden] { display: none; }
   .track .head {
@@ -408,10 +413,11 @@
     outline-offset: 2px;
   }
   button[aria-pressed="true"] {
-    background: var(--tape);
+    background: #2A3B7A;
     border-color: var(--tape);
-    color: var(--corridor);
+    color: #fff;
     font-weight: 700;
+    box-shadow: inset 0 -4px 0 var(--tape);
   }
   button:disabled { opacity: .4; cursor: default; }
 
@@ -508,7 +514,7 @@
     font-size: 15px;
     line-height: 1.2;
     white-space: nowrap;
-    border-bottom: 3px solid var(--tape);   /* same tape colour as the blocks on the timeline */
+    border-bottom: 3px solid var(--line);
   }
   .parts button.all { border-bottom-color: var(--line); }
   .parts button .en { display: block; font-size: 11px; }
@@ -518,7 +524,7 @@
     grid-template-columns: 1fr 1fr 0.8fr;
     gap: 8px;
   }
-  .ab-row button.set { border-left: 4px solid var(--hat); }
+  .ab-row button.set { border-left: 4px solid var(--tape); }
 
   /* ---------- mark mode (owner only, ?mark=1) ---------- */
   .mark {
@@ -564,7 +570,7 @@
   .en { color: var(--haze); font-size: .82em; font-weight: 500; letter-spacing: 0; }
   .label .en { margin-left: 4px; }
   .toggles button .en, .ab-row button .en { display: block; font-size: 11px; margin-top: 2px; }
-  button[aria-pressed="true"] .en { color: var(--corridor); opacity: .75; }
+  button[aria-pressed="true"] .en { color: var(--mirror); opacity: .85; }
   .transport .play .en, .fsbar .fs-play .en { display: block; font-size: 11px; line-height: 1.1; color: var(--corridor); opacity: .7; }
 
   /* ---------- how-to + credit, above the player ---------- */
