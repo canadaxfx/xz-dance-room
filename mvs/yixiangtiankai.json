@@ -1,0 +1,73 @@
+{
+  "slug": "yixiangtiankai",
+  "title": "异想天开",
+  "artist": "肖战",
+  "artistEn": "Xiao Zhan",
+  "released": "2026-10-04",
+  "bpm": 119,
+  "video": "https://assets.xz-studio-gallery.com/dance/yixiangtiankai/practice_1080p.mp4",
+  "poster": "https://assets.xz-studio-gallery.com/dance/yixiangtiankai/poster.jpg",
+  "sources": [
+    {
+      "label": "肖战微博",
+      "labelEn": "Weibo",
+      "url": "https://weibo.com/1792951112/RlekT6h7z"
+    },
+    {
+      "label": "肖战工作室抖音",
+      "labelEn": "Douyin",
+      "url": "https://www.douyin.com/video/7692861487740485617"
+    }
+  ],
+  "douyinEmbed": {
+    "vid": "7692861487740485617",
+    "by": "肖战工作室"
+  },
+  "sections": [
+    {
+      "name": "第1段",
+      "en": "Part 1",
+      "start": 4.6,
+      "end": 19.8
+    },
+    {
+      "name": "第2段",
+      "en": "Part 2",
+      "start": 25.9,
+      "end": 78.4
+    },
+    {
+      "name": "第3段",
+      "en": "Part 3",
+      "start": 84.5,
+      "end": 116.8
+    }
+  ],
+  "build": {
+    "original": "https://assets.xz-studio-gallery.com/full/20261005_XZ-Weibo-2.mp4",
+    "lead": 3.0,
+    "tail": 1.5,
+    "card": 1.6,
+    "posterAt": 112,
+    "sections": [
+      {
+        "name": "第1段",
+        "en": "Part 1",
+        "start": 49.8,
+        "end": 65
+      },
+      {
+        "name": "第2段",
+        "en": "Part 2",
+        "start": 95.6,
+        "end": 148.1
+      },
+      {
+        "name": "第3段",
+        "en": "Part 3",
+        "start": 196.3,
+        "end": 228.6
+      }
+    ]
+  }
+}

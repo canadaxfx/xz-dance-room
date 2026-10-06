@@ -1,0 +1,1386 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="copyright" content="Practice cuts and page © 2026 CanadaXFX. MV © its owners. Unauthorized AI training prohibited.">
+<meta name="theme-color" content="#0D1736">
+<title>XZ Dance Room · XZ 舞蹈练习室</title>
+<style>
+  /* Self-hosted: Google Fonts is unreachable for most fans in China. Latin subset only (numerals + title). */
+  @font-face {
+    font-family: "Big Shoulders";
+    src: url("fonts/big-shoulders-display-800.woff2") format("woff2");
+    font-weight: 800;
+    font-display: swap;
+  }
+
+  :root {
+    --corridor: #0D1736;   /* the MV's lit hallway */
+    --panel:    #141F45;
+    --line:     #26335F;
+    --mirror:   #DCE3F0;   /* text */
+    --haze:     #8592B5;   /* secondary text */
+    --tape:     #FFC93C;   /* spike tape: sections, the count, active state */
+    --hat:      #E8503A;   /* party hat: A–B loop markers */
+
+    --display: "Big Shoulders", "Arial Narrow", Impact, sans-serif;
+    --body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+    --radius: 10px;
+    --gap: 14px;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse 70% 40% at 50% 0%, #1C2B66 0%, rgba(28, 43, 102, 0) 70%),
+      var(--corridor);
+    color: var(--mirror);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: max(14px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+  }
+
+  /* ---------- header ---------- */
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;            /* phones: the subtitle drops under the title */
+    gap: 2px 12px;
+    margin: 4px 0 12px;
+  }
+  .title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+  .title .en {
+    font-family: var(--display);
+    font-weight: 800;
+    color: var(--tape);
+    letter-spacing: .08em;
+    margin-left: 8px;
+    font-size: 17px;
+  }
+  .sub { color: var(--haze); font-size: 13px; }
+
+  /* ---------- stage ---------- */
+  .stage {
+    position: relative;
+    background: #000;
+    border-radius: var(--radius);
+    overflow: hidden;
+    aspect-ratio: 2872 / 2160;
+    box-shadow: 0 0 0 1px var(--line);
+  }
+  .stage video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+    background: #000;
+  }
+  .stage.mirrored video { transform: scaleX(-1); }
+
+  .badges {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    gap: 6px;
+    pointer-events: none;
+  }
+  .badge {
+    font: 800 15px/1 var(--display);
+    letter-spacing: .06em;
+    background: rgba(13, 23, 54, .78);
+    color: var(--mirror);
+    padding: 6px 8px 5px;
+    border-radius: 6px;
+  }
+  .badge.speed { color: var(--tape); }
+  .badge[hidden] { display: none; }
+
+  /* the count: 5 · 6 · 7 · 8 */
+  .count {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(8, 12, 30, .55);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .15s;
+  }
+  .count.on { opacity: 1; }
+  .count .num {
+    font: 800 clamp(110px, 34vw, 260px)/0.8 var(--display);
+    color: var(--tape);
+    text-shadow: 0 6px 30px rgba(0, 0, 0, .55);
+  }
+  .count .num.hit { animation: hit .22s ease-out; }
+  @keyframes hit { from { transform: scale(1.18); } to { transform: scale(1); } }
+  .count .row {
+    position: absolute;
+    bottom: 12%;
+    display: flex;
+    gap: 14px;
+    font: 800 22px/1 var(--display);
+    color: rgba(220, 227, 240, .35);
+    letter-spacing: .05em;
+  }
+  .count .row span.done { color: var(--tape); }
+
+  /* ---------- fullscreen ---------- */
+  .fs-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 13px;
+    background: rgba(13, 23, 54, .78);
+    border-color: transparent;
+    z-index: 3;
+  }
+  /* One look for both kinds of fullscreen: the real Fullscreen API (desktop, Android)
+     and the full-window fallback (iPhone, which only lets <video> itself go fullscreen). */
+  .stage.fs {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    aspect-ratio: auto;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  body.fs-lock { overflow: hidden; }
+  .fsbar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    display: none;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 12px max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    background: linear-gradient(to top, rgba(8, 12, 30, .92), rgba(8, 12, 30, 0));
+    transition: opacity .25s;
+    z-index: 3;
+  }
+  .stage.fs .fsbar { display: flex; }
+  .stage.fs.idle .fsbar, .stage.fs.idle .fs-btn { opacity: 0; pointer-events: none; }
+  .stage.fs.idle { cursor: none; }
+  .fsbar button { min-height: 44px; padding: 8px 12px; }
+  .fsbar .fs-play { background: var(--mirror); color: var(--corridor); border-color: var(--mirror); font-weight: 800; min-width: 84px; }
+  .fsbar .fs-speeds { display: flex; gap: 6px; }
+  .fsbar .fs-speeds button { font: 800 18px/1 var(--display); padding: 8px 10px; }
+  .fsbar .sep { width: 1px; height: 28px; background: var(--line); margin: 0 4px; }
+
+  /* ---------- official MV (Douyin embed, loads on tap) ---------- */
+  .official {
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .official[hidden] { display: none; }
+  .official .frame {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    background: var(--panel);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+  }
+  .official iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .official .load { font-weight: 700; }
+
+  /* bubbly reminders */
+  .bubble {
+    position: relative;
+    display: inline-block;
+    margin: 0 0 14px;
+    padding: 10px 16px;
+    min-height: 0;
+    background: var(--tape);
+    color: var(--corridor);
+    border: 0;
+    border-radius: 18px;
+    font-weight: 700;
+    font-size: 15px;
+    animation: pop .5s cubic-bezier(.3, 1.6, .5, 1) both;
+  }
+  .bubble::after {               /* speech-bubble tail pointing at the player */
+    content: "";
+    position: absolute;
+    left: 28px;
+    bottom: -8px;
+    border: 8px solid transparent;
+    border-top-color: var(--tape);
+    border-bottom: 0;
+  }
+  .bubble:hover { filter: brightness(1.06); }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .nudge {
+    position: absolute;
+    top: 52px;
+    /* centred with margins, not transform: the pop-in animation animates transform
+       and would wipe out a translateX(-50%) (seen: bubble hung off the right edge) */
+    left: 12px;
+    right: 12px;
+    margin: 0 auto;
+    width: fit-content;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: calc(100% - 24px);
+    padding: 10px 12px 10px 16px;
+    background: var(--tape);
+    color: var(--corridor);
+    border-radius: 18px;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+    animation: pop .5s cubic-bezier(.3, 1.6, .5, 1) both;
+  }
+  .nudge[hidden] { display: none; }
+  .nudge button { min-height: 34px; padding: 4px 12px; font-size: 13px; border-radius: 999px; }
+  .nudge .go { background: var(--corridor); color: var(--tape); border-color: var(--corridor); }
+  .nudge .stay { background: transparent; color: var(--corridor); border-color: rgba(13, 23, 54, .35); }
+
+  /* ---------- sources ---------- */
+  .sources { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--haze); }
+  .sources a {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 40px; padding: 8px 14px;
+    color: var(--mirror); text-decoration: none; font-weight: 600;
+    background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--tape);
+    border-radius: var(--radius);
+  }
+  /* the links wrap as one group, so on phones they sit side by side under the label */
+  .sources .chips { display: flex; gap: 8px; max-width: 100%; }
+  .sources .chips a { white-space: nowrap; }
+  @media (max-width: 560px) {
+    .sources .chips { width: 100%; }
+    .sources .chips a { flex: 1 1 auto; justify-content: center; padding: 8px 10px; }
+  }
+  @media (max-width: 360px) {   /* smallest phones: tighter so both still fit */
+    .sources .chips { gap: 6px; }
+    .sources .chips a { padding: 8px 6px; font-size: 12px; gap: 4px; }
+  }
+  .sources a:hover { border-color: var(--tape); color: var(--tape); }
+  .sources a:focus-visible { outline: 3px solid var(--tape); outline-offset: 2px; }
+
+  .notice {
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
+    background: rgba(13, 23, 54, .85);
+    color: var(--mirror);
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .notice[hidden] { display: none; }
+
+  /* ---------- timeline (floor tape) ---------- */
+  .timeline {
+    margin: 16px 0 4px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .track {
+    position: relative;
+    height: 38px;
+    cursor: pointer;
+  }
+  .track .rail {
+    position: absolute;
+    left: 0; right: 0; top: 16px;
+    height: 6px;
+    background: var(--line);
+    border-radius: 3px;
+  }
+  .track .played {
+    position: absolute;
+    left: 0; top: 16px;
+    height: 6px;
+    background: var(--haze);
+    border-radius: 3px;
+  }
+  .track .tape {
+    position: absolute;
+    top: 11px;
+    height: 16px;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.10) 0 2px, rgba(255,255,255,0) 2px 7px),
+      var(--tape);
+    opacity: .55;
+    border-radius: 2px;
+  }
+  .track .tape.active { opacity: 1; }
+  .track .ab {
+    position: absolute;
+    top: 9px;
+    height: 20px;
+    background: rgba(232, 80, 58, .28);
+    border-left: 3px solid var(--hat);
+    border-right: 3px solid var(--hat);
+  }
+  .track .ab[hidden] { display: none; }
+  .track .marker {
+    position: absolute;
+    top: 0;
+    width: 3px;
+    height: 38px;
+    margin-left: -1px;
+    background: var(--hat);
+  }
+  .track .marker[hidden] { display: none; }
+  .track .head {
+    position: absolute;
+    top: 6px;
+    width: 4px;
+    height: 26px;
+    margin-left: -2px;
+    background: var(--mirror);
+    border-radius: 2px;
+    box-shadow: 0 0 0 3px rgba(13, 23, 54, .9);
+  }
+  .times {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: var(--haze);
+  }
+
+  /* ---------- controls ---------- */
+  button {
+    font: inherit;
+    color: inherit;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    min-height: 44px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:hover { border-color: #3A4A80; }
+  button:focus-visible, input:focus-visible {
+    outline: 3px solid var(--tape);
+    outline-offset: 2px;
+  }
+  button[aria-pressed="true"] {
+    background: var(--tape);
+    border-color: var(--tape);
+    color: var(--corridor);
+    font-weight: 700;
+  }
+  button:disabled { opacity: .4; cursor: default; }
+
+  .transport {
+    display: flex;
+    gap: 6px;
+    margin: 12px 0 0;
+  }
+  .transport .play {
+    flex: 0 0 auto;
+    min-width: 76px;            /* same width for 播放 / 暂停 / 取消 */
+    min-height: 42px;
+    padding: 6px 10px;
+    background: var(--mirror);
+    color: var(--corridor);
+    border-color: var(--mirror);
+    font-weight: 800;
+    font-size: 16px;
+  }
+
+  section.block {
+    margin-top: 22px;
+  }
+  .label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;            /* phones: the right-hand note drops to its own line, not mid-word */
+    gap: 2px 10px;
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--haze);
+    letter-spacing: .04em;
+  }
+  .label > span { white-space: nowrap; }
+  .label b { color: var(--mirror); font-weight: 600; letter-spacing: 0; }
+
+  .speeds {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .speeds button {
+    font: 800 18px/1 var(--display);
+    letter-spacing: .02em;
+    padding: 6px 2px;
+    min-height: 42px;
+  }
+  .slider-label { font-size: 13px; color: var(--haze); white-space: nowrap; }
+  @media (max-width: 360px) {
+    .speeds { gap: 4px; }
+    .speeds button { font-size: 16px; }
+    .transport .play { min-width: 60px; }
+  }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  input[type="range"] {
+    flex: 1;
+    accent-color: var(--tape);
+    height: 28px;
+  }
+  .speed-val {
+    font: 800 20px/1 var(--display);
+    color: var(--tape);
+    min-width: 52px;
+    text-align: right;
+  }
+
+  .toggles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .parts {
+    display: flex;
+    gap: 6px;
+    margin: 10px 0 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .parts::-webkit-scrollbar { display: none; }
+  .parts[hidden] { display: none; }
+  .parts button {
+    flex: 1 0 auto;
+    min-height: 42px;
+    padding: 5px 10px;
+    font-size: 15px;
+    line-height: 1.2;
+    white-space: nowrap;
+    border-bottom: 3px solid var(--tape);   /* same tape colour as the blocks on the timeline */
+  }
+  .parts button.all { border-bottom-color: var(--line); }
+  .parts button .en { display: block; font-size: 11px; }
+
+  .ab-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 0.8fr;
+    gap: 8px;
+  }
+  .ab-row button.set { border-left: 4px solid var(--hat); }
+
+  /* ---------- mark mode (owner only, ?mark=1) ---------- */
+  .mark {
+    margin-top: 26px;
+    padding: 14px;
+    border: 1px dashed var(--tape);
+    border-radius: var(--radius);
+  }
+  .mark[hidden] { display: none; }
+  .mark h2 { margin: 0 0 6px; font-size: 15px; }
+  .mark p { margin: 0 0 10px; color: var(--haze); font-size: 13px; }
+  .mark .add {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+  }
+  @media (max-width: 560px) { .mark .add { grid-template-columns: 1fr; } }
+  .mark input[type="text"] {
+    font: inherit;
+    color: var(--mirror);
+    background: var(--corridor);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+  .mark ul { list-style: none; padding: 0; margin: 12px 0; }
+  .mark li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .mark li .t { font-family: var(--mono); color: var(--haze); font-size: 12px; }
+  .mark li button { min-height: 34px; padding: 4px 10px; font-size: 13px; }
+  .mark .out { display: flex; gap: 8px; flex-wrap: wrap; }
+  .copied { color: var(--tape); font-size: 13px; align-self: center; }
+
+  /* ---------- English support: small, quieter, always after the Chinese ---------- */
+  .en { color: var(--haze); font-size: .82em; font-weight: 500; letter-spacing: 0; }
+  .label .en { margin-left: 4px; }
+  .toggles button .en, .ab-row button .en { display: block; font-size: 11px; margin-top: 2px; }
+  button[aria-pressed="true"] .en { color: var(--corridor); opacity: .75; }
+  .transport .play .en, .fsbar .fs-play .en { display: block; font-size: 11px; line-height: 1.1; color: var(--corridor); opacity: .7; }
+
+  /* ---------- how-to + credit, above the player ---------- */
+  .intro {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    border-left: 4px solid var(--tape);
+    background: rgba(20, 31, 69, .6);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    color: var(--haze);
+    font-size: 13px;
+    line-height: 1.65;
+  }
+  .intro p { margin: 0; }
+  .intro p + p { margin-top: 4px; }
+  .intro > p:first-child { color: var(--mirror); }
+  .intro .en { display: block; font-size: 12px; }
+  .intro .keys .en { display: inline; }
+  .nw { white-space: nowrap; }
+  .intro kbd {
+    font-family: var(--mono);
+    font-size: 11px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0 4px;
+  }
+  @media (hover: none) { .keys { display: none; } }
+
+  /* ---------- back link + home catalog (2+ MVs) ---------- */
+  .back-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    color: var(--tape);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .back-all[hidden] { display: none; }
+  .back-all:hover { text-decoration: underline; }
+  .catalog[hidden], .room[hidden] { display: none; }
+  .intro-line { margin: 0 0 14px; color: var(--mirror); }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--gap);
+  }
+  .card {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .card:hover { border-color: var(--tape); }
+  .card:focus-visible { outline: 3px solid var(--tape); outline-offset: 2px; }
+  .card .poster { aspect-ratio: 2872 / 2160; background: #000 center / cover no-repeat; border-bottom: 4px solid var(--tape); }
+  .card .meta { padding: 10px 12px 12px; }
+  .card h2 { margin: 0; font-size: 18px; }
+  .card h2 .en { font-family: var(--display); font-weight: 800; color: var(--tape); letter-spacing: .06em; margin-left: 6px; font-size: 15px; }
+  .card .facts { margin-top: 4px; font-size: 13px; color: var(--haze); }
+  /* ---------- footer: sister sites, CanadaXFX line, terms ---------- */
+  .foot {
+    margin-top: 32px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    color: var(--haze);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .foot p { margin: 0 0 8px; }
+  .foot { text-align: center; }            /* whole footer centred; the opened terms list reads left-aligned */
+  .foot .owner { color: var(--mirror); font-weight: 600; margin-top: 16px; }
+  .terms summary {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 36px; cursor: pointer; list-style: none;
+    color: var(--tape); font-size: 13px; font-weight: 600;
+  }
+  .terms summary::-webkit-details-marker { display: none; }
+  .terms summary::before { content: "▸"; transition: transform .15s; }
+  .terms[open] summary::before { transform: rotate(90deg); }
+  .terms summary:focus-visible { outline: 3px solid var(--tape); outline-offset: 2px; }
+  .terms ul {
+    text-align: left;
+    margin: 6px 0 0; padding: 12px 14px 12px 30px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  }
+  .terms li { margin: 0 0 8px; color: var(--mirror); }
+  .terms li:last-child { margin-bottom: 0; }
+  .terms li .en { display: block; }
+  .foot .more { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; font-size: 13px; }
+  .foot .more .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; }   /* the two links wrap as a pair */
+  .foot .more a {
+    color: var(--mirror); text-decoration: none; font-weight: 600; white-space: nowrap;
+    padding: 4px 0; border-bottom: 2px solid var(--tape);
+  }
+  .foot .more a:hover { color: var(--tape); }
+  .foot .more a:focus-visible { outline: 3px solid var(--tape); outline-offset: 2px; }
+
+  @media (min-width: 720px) {
+    .title { font-size: 24px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .count .num.hit { animation: none; }
+    .count, .fsbar { transition: none; }
+    .bubble, .nudge { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back-all" id="backAll" href="./" hidden>← 全部 MV <span class="en">All MVs</span></a>
+  <header>
+    <h1 class="title">XZ · 舞蹈练习室<span class="en">DANCE WITH XIAO ZHAN</span></h1>
+    <span class="sub" id="mvSub">肖战 MV 练习版 <span class="en">MV dance practice</span></span>
+  </header>
+
+  <!-- home: one card per MV (only shown when there are 2+ MVs) -->
+  <main class="catalog" id="catalog" hidden>
+    <p class="intro-line">选一支 MV 开始练 <span class="en">Pick an MV to practise</span></p>
+    <div class="cards" id="cards"></div>
+  </main>
+
+  <div class="room" id="room">
+  <section class="intro">
+    <p>点段落 → 选速度 → 开循环，<span class="nw">重播前数「5、6、7、8」</span>。
+      <span class="en">Tap a part, pick a speed, loop it — every replay counts you in 5-6-7-8.</span></p>
+    <p class="keys">键盘 <span class="en">Keys</span>：<kbd>空格</kbd> 播放 · <kbd>1</kbd>–<kbd>5</kbd> 速度 · <kbd>L</kbd> 循环 · <kbd>M</kbd> 镜像 · <kbd>A</kbd>/<kbd>B</kbd> 圈段 · <kbd>F</kbd> 全屏</p>
+  </section>
+
+  <div class="stage" id="stage">
+    <video id="v" playsinline preload="metadata"></video>
+    <button class="fs-btn" id="fsBtn" aria-label="全屏">⛶ 全屏</button>
+    <div class="fsbar" id="fsbar">
+      <button id="fsPlay" class="fs-play">播放<span class="en">Play</span></button>
+      <div class="fs-speeds" id="fsSpeeds">
+        <button data-rate="0.5">0.5×</button>
+        <button data-rate="0.75">0.75×</button>
+        <button data-rate="1">1.0×</button>
+      </div>
+    </div>
+    <div class="badges">
+      <span class="badge speed" id="bSpeed">1.0×</span>
+      <span class="badge" id="bMirror" hidden>镜像</span>
+      <span class="badge" id="bLoop" hidden>循环</span>
+    </div>
+    <div class="count" id="count" aria-live="polite">
+      <div class="num" id="countNum"></div>
+      <div class="row" id="countRow"><span>5</span><span>6</span><span>7</span><span>8</span></div>
+    </div>
+    <div class="notice" id="notice" hidden></div>
+    <div class="nudge" id="nudge" role="status" hidden>
+      <span>练了 10 分钟啦！歇一会儿，看看抖音原版 MV ☕</span>
+      <button class="go" id="nudgeGo">去看看</button>
+      <button class="stay" id="nudgeStay">继续练</button>
+    </div>
+  </div>
+
+  <div class="timeline">
+    <div class="track" id="track" role="slider" aria-label="播放进度" tabindex="0"
+         aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
+      <div class="rail"></div>
+      <div id="tapes"></div>
+      <div class="played" id="played"></div>
+      <div class="ab" id="abRange" hidden></div>
+      <div class="marker" id="markA" hidden></div>
+      <div class="marker" id="markB" hidden></div>
+      <div class="head" id="head"></div>
+    </div>
+    <div class="times"><span id="tNow">0:00.0</span><span id="tDur">0:00</span></div>
+  </div>
+
+  <!-- dance parts: one slim row of tabs (scrolls sideways if an MV has many parts) -->
+  <div class="parts" id="sections" role="group" aria-label="舞蹈段落 Dance parts" hidden></div>
+
+  <!-- play + speeds on one row -->
+  <div class="transport">
+    <button id="play" class="play">播放<span class="en">Play</span></button>
+    <div class="speeds" id="speeds" role="group" aria-label="速度 Speed">
+      <button data-rate="0.5">0.5×</button>
+      <button data-rate="0.6">0.6×</button>
+      <button data-rate="0.75">0.75×</button>
+      <button data-rate="0.9">0.9×</button>
+      <button data-rate="1">1.0×</button>
+    </div>
+  </div>
+  <div class="slider-row">
+    <span class="slider-label">速度 <span class="en">Speed</span></span>
+    <input type="range" id="rate" min="0.25" max="1" step="0.05" value="1" aria-label="细调速度 Fine speed">
+    <span class="speed-val" id="rateVal">1.0×</span>
+  </div>
+
+  <section class="block">
+    <div class="label"><span>练习 <span class="en">Practice</span></span></div>
+    <div class="toggles">
+      <button id="tLoop" aria-pressed="false">循环<span class="en">Loop</span></button>
+      <button id="tMirror" aria-pressed="false">镜像<span class="en">Mirror</span></button>
+      <button id="tCount" aria-pressed="true" title="每次开始前按节拍数 5、6、7、8">预备拍<span class="en">Count-in</span></button>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="label"><span>自己圈一段（A–B） <span class="en">Your own loop</span></span><span id="abText"></span></div>
+    <div class="ab-row">
+      <button id="setA" class="set">设为起点 A<span class="en">Set start</span></button>
+      <button id="setB" class="set">设为终点 B<span class="en">Set end</span></button>
+      <button id="clearAB">清除<span class="en">Clear</span></button>
+    </div>
+  </section>
+
+  <section class="mark" id="mark" hidden>
+    <h2>标记舞蹈段落</h2>
+    <p>播放到某段舞的开头点「设为起点 A」，到结尾点「设为终点 B」，起个名字后保存。全部标好后复制段落数据发给管理员。</p>
+    <div class="add">
+      <input type="text" id="secName" placeholder="段落名，例如：第4段" maxlength="20">
+      <input type="text" id="secEn" placeholder="English, e.g. Part 4 (optional)" maxlength="30">
+      <button id="saveSec">保存这一段</button>
+    </div>
+    <ul id="markList"></ul>
+    <div class="out">
+      <button id="copyJson">复制段落数据</button>
+      <span class="copied" id="copied" hidden>已复制</span>
+    </div>
+  </section>
+
+  <section class="official" id="official" hidden>
+    <div class="label"><span>观看完整原版 MV <span class="en">Full official MV</span></span><span id="officialBy"></span></div>
+    <button class="bubble" id="officialBubble"></button>
+    <div class="frame" id="officialFrame">
+      <button class="load" id="officialLoad">▶ 加载官方原版</button>
+    </div>
+    <div class="sources" id="sources" hidden></div>
+  </section>
+  </div><!-- /room -->
+
+  <footer class="foot">
+    <p class="more"><span>更多肖战作品 <span class="en">More Xiao Zhan</span></span>
+      <span class="links">
+        <a href="https://xzworks.pages.dev/" target="_blank" rel="noopener">肖战银幕艺术 <span class="en">Screen Arts</span> ↗</a>
+        <a href="https://xzyt.pages.dev/" target="_blank" rel="noopener">肖战 YouTube 合集 <span class="en">XZYT</span> ↗</a>
+      </span></p>
+    <p class="owner">&copy; 2026 CanadaXFX. All rights reserved.</p>
+    <details class="terms">
+      <summary>使用条款 <span class="en">Terms of Use</span></summary>
+      <ul>
+        <li>所有与肖战相关的 MV 画面及内容归各自版权所有者所有。<span class="en">All MV footage and content related to Xiao Zhan belong to their respective copyright owners.</span></li>
+        <li>本站练习版剪辑、段落标记及页面设计版权归 © 2026 CanadaXFX 所有。<span class="en">The practice cuts, section marks and design of this site are © 2026 CanadaXFX.</span></li>
+        <li>练习视频仅供本站观看，请勿下载、转载或嵌入。<span class="en">Practice videos are for watching on this site only — please don't download, re-upload or embed them.</span></li>
+        <li>仅限个人及非商业用途。<span class="en">Personal and non-commercial use only.</span></li>
+        <li>严禁将本站内容用于 AI 训练。<span class="en">AI training is strictly prohibited.</span></li>
+        <li>未经明确授权，本站的原创内容、设计及代码不得被复制、传播或使用。<span class="en">The original content, design and code of this website may not be reproduced, distributed or used without explicit permission.</span></li>
+        <li>欢迎链接本站，但禁止以框架嵌入或镜像本站。<span class="en">Links to this website are permitted, but framing or mirroring is prohibited.</span></li>
+      </ul>
+    </details>
+  </footer>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- config ----------
+  // Data lives in mvs/index.json (catalog) + mvs/<slug>.json (one per MV), see CLAUDE.md.
+  // FALLBACK is only used when the page is opened straight from disk and can't fetch them.
+  const FALLBACK = {
+    slug: 'yixiangtiankai',
+    title: '异想天开',
+    video: 'https://assets.xz-studio-gallery.com/dance/yixiangtiankai/practice_1080p.mp4',
+    bpm: 119,
+    sections: []
+  };
+  const params = new URLSearchParams(location.search);
+  const MARK = params.has('mark');
+  const $ = id => document.getElementById(id);
+  const v = $('v'), stage = $('stage');
+
+  // ---------- stored preferences (per viewer only) ----------
+  const store = {
+    get(k, d) { try { const x = localStorage.getItem('xzdance.' + k); return x === null ? d : JSON.parse(x); } catch (e) { return d; } },
+    set(k, x) { try { localStorage.setItem('xzdance.' + k, JSON.stringify(x)); } catch (e) { /* private mode */ } }
+  };
+  const prefs = {
+    rate: store.get('rate', 1),
+    mirror: store.get('mirror', false),
+    loop: store.get('loop', false),
+    count: store.get('count', true)
+  };
+
+  let cfg = FALLBACK;
+  let sections = [];
+  let active = null;            // selected section {name,start,end}
+  let A = null, B = null;       // custom loop points
+  let duration = 0;
+
+  // ---------- helpers ----------
+  const fmt = (t, tenths) => {
+    if (!isFinite(t)) t = 0;
+    const m = Math.floor(t / 60), s = t - m * 60;
+    return tenths ? `${m}:${s.toFixed(1).padStart(4, '0')}` : `${m}:${String(Math.floor(s)).padStart(2, '0')}`;
+  };
+  const pct = t => duration ? `${Math.max(0, Math.min(100, t / duration * 100))}%` : '0%';
+  const region = () => {
+    if (A !== null && B !== null && B > A) return { start: A, end: B, custom: true };
+    if (active) return { start: active.start, end: active.end, custom: false };
+    return null;
+  };
+  let noticeTimer = null;
+  const notice = (msg, ms = 1600) => {
+    const n = $('notice');
+    n.textContent = msg; n.hidden = false;
+    clearTimeout(noticeTimer);
+    if (ms) noticeTimer = setTimeout(() => { n.hidden = true; }, ms);
+  };
+
+  // ---------- speed ----------
+  function setRate(r) {
+    r = Math.round(Math.max(0.25, Math.min(1, r)) * 100) / 100;
+    prefs.rate = r; store.set('rate', r);
+    v.playbackRate = r;
+    v.preservesPitch = true; v.mozPreservesPitch = true; v.webkitPreservesPitch = true;
+    $('rate').value = r;
+    const label = (r === 1 ? '1.0' : String(r)) + '×';
+    $('rateVal').textContent = label;
+    $('bSpeed').textContent = label;
+    document.querySelectorAll('#speeds button, #fsSpeeds button').forEach(b =>
+      b.setAttribute('aria-pressed', String(Math.abs(Number(b.dataset.rate) - r) < 0.001)));
+  }
+
+  // ---------- toggles ----------
+  function setToggle(key, on) {
+    prefs[key] = on; store.set(key, on);
+    const btn = { loop: 'tLoop', mirror: 'tMirror', count: 'tCount' }[key];
+    $(btn).setAttribute('aria-pressed', String(on));
+    if (key === 'mirror') { stage.classList.toggle('mirrored', on); $('bMirror').hidden = !on; }
+    if (key === 'loop') $('bLoop').hidden = !on;
+  }
+
+  // ---------- the count: 5 6 7 8 on the song's beat, scaled by speed ----------
+  let audioCtx = null, counting = false, countTimer = null;
+  function tick(accent) {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain(), now = audioCtx.currentTime;
+      o.frequency.value = accent ? 1568 : 1046;
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(0.35, now + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(now); o.stop(now + 0.1);
+    } catch (e) { /* no audio: the numbers still show */ }
+  }
+  function cancelCount() {
+    if (counting && v.paused) setPlayLabel('播放');
+    clearTimeout(countTimer); counting = false;
+    $('count').classList.remove('on');
+  }
+  function countIn(then) {
+    cancelCount();
+    if (!prefs.count) { then(); return; }
+    counting = true;
+    v.pause();
+    setPlayLabel('取消');
+    const beatMs = 60000 / (cfg.bpm || 119) / prefs.rate;
+    const nums = [5, 6, 7, 8], row = $('countRow').children, num = $('countNum');
+    $('count').classList.add('on');
+    let i = 0;
+    const step = () => {
+      if (!counting) return;
+      if (i < nums.length) {
+        num.textContent = nums[i];
+        num.classList.remove('hit'); void num.offsetWidth; num.classList.add('hit');
+        [...row].forEach((s, j) => s.classList.toggle('done', j <= i));
+        tick(i === 0);
+        i++;
+        countTimer = setTimeout(step, beatMs);
+      } else {
+        counting = false;
+        $('count').classList.remove('on');
+        then();
+      }
+    };
+    step();
+  }
+
+  const PLAY_EN = { '播放': 'Play', '暂停': 'Pause', '取消': 'Cancel' };
+  function setPlayLabel(text) {
+    const html = `${text}<span class="en">${PLAY_EN[text] || ''}</span>`;
+    $('play').innerHTML = html;
+    $('fsPlay').innerHTML = html;
+  }
+
+  // ---------- fullscreen ----------
+  // Real Fullscreen API where the browser allows it on an element (desktop, Android).
+  // iPhone only lets <video> itself go fullscreen, which would hide the count-in and drop
+  // mirroring, so there we fill the browser window instead ("full-window" mode).
+  const fsApi = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  let fsOn = false, idleTimer = null;
+  const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
+
+  function applyFs(on) {
+    fsOn = on;
+    stage.classList.toggle('fs', on);
+    document.body.classList.toggle('fs-lock', on);
+    $('fsBtn').textContent = on ? '退出全屏' : '⛶ 全屏';
+    $('fsBtn').setAttribute('aria-label', on ? '退出全屏' : '全屏');
+    stage.classList.remove('idle');
+    if (on) wakeIdle(); else clearTimeout(idleTimer);
+  }
+  async function enterFs() {
+    if (fsApi) {
+      // Some embedded / in-app browsers (e.g. WeChat's) accept the request but never answer it,
+      // so don't wait forever: give real fullscreen 0.8 s, then use full-window mode instead.
+      let req;
+      try { req = stage.requestFullscreen ? stage.requestFullscreen() : stage.webkitRequestFullscreen(); } catch (e) {}
+      await Promise.race([
+        Promise.resolve(req).catch(() => {}),
+        new Promise(r => setTimeout(r, 800))
+      ]);
+      if (fsElement()) {
+        // Phones: turn sideways for the 4:3 MV when the browser allows it (Android Chrome).
+        if (matchMedia('(pointer: coarse)').matches && screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        }
+        return;   // fullscreenchange applies the state
+      }
+    }
+    applyFs(true);
+  }
+  async function exitFs() {
+    if (fsElement()) {
+      try { await (document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen()); } catch (e) {}
+      try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) {}
+    } else {
+      applyFs(false);
+    }
+  }
+  const toggleFs = () => (fsOn ? exitFs() : enterFs());
+  function onFsChange() { applyFs(!!fsElement()); }
+
+  // In fullscreen the control bar hides after 3 s of playback so the dancers stay visible;
+  // any tap or mouse move on the video brings it back.
+  function wakeIdle() {
+    stage.classList.remove('idle');
+    clearTimeout(idleTimer);
+    if (fsOn) idleTimer = setTimeout(() => { if (!v.paused && fsOn) stage.classList.add('idle'); }, 3000);
+  }
+
+  // ---------- playback ----------
+  let unlocked = false, wakeLock = null;
+  async function keepAwake(on) {
+    try {
+      if (on && 'wakeLock' in navigator && !wakeLock) wakeLock = await navigator.wakeLock.request('screen');
+      if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+    } catch (e) { wakeLock = null; }
+  }
+  function doPlay() {
+    v.play().catch(() => notice('点「播放」开始', 2500));
+  }
+  function startFrom(t) {
+    v.currentTime = t;
+    countIn(doPlay);
+  }
+  // iOS only lets a page start audio/video from inside a tap. The count-in starts playback
+  // after a delay, so on the first tap we start (and immediately hold) the video and audio
+  // context while still inside the gesture; later programmatic play() calls are then allowed.
+  function primeMedia() {
+    if (unlocked) return;
+    unlocked = true;
+    try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {}
+    if (prefs.count) v.play().then(() => { if (counting) v.pause(); }).catch(() => {});
+  }
+  function togglePlay() {
+    if (counting) { cancelCount(); setPlayLabel('播放'); return; }
+    if (!v.paused) { v.pause(); return; }
+    const r = region();
+    if (r && (v.currentTime < r.start || v.currentTime >= r.end - 0.05)) v.currentTime = r.start;
+    primeMedia();
+    countIn(doPlay);
+  }
+
+  // Loop watcher: rAF is precise enough even at 0.25×; timeupdate only fires ~4×/s.
+  function watch() {
+    const r = region();
+    if (r && prefs.loop && !v.paused && !counting && v.currentTime >= r.end) {
+      v.pause();
+      startFrom(r.start);
+    }
+    drawProgress();
+    requestAnimationFrame(watch);
+  }
+
+  // ---------- timeline ----------
+  function drawProgress() {
+    const t = v.currentTime || 0;
+    $('played').style.width = pct(t);
+    $('head').style.left = pct(t);
+    $('tNow').textContent = fmt(t, true);
+    const track = $('track');
+    track.setAttribute('aria-valuenow', Math.round(t));
+    track.setAttribute('aria-valuetext', fmt(t));
+  }
+  function drawMarks() {
+    $('markA').hidden = A === null; if (A !== null) $('markA').style.left = pct(A);
+    $('markB').hidden = B === null; if (B !== null) $('markB').style.left = pct(B);
+    const ab = $('abRange');
+    if (A !== null && B !== null && B > A) {
+      ab.hidden = false; ab.style.left = pct(A); ab.style.width = `calc(${pct(B)} - ${pct(A)})`;
+      $('abText').textContent = `${fmt(A, true)} – ${fmt(B, true)}`;
+    } else {
+      ab.hidden = true;
+      $('abText').textContent = A !== null ? `起点 ${fmt(A, true)}` : '';
+    }
+  }
+  function drawTapes() {
+    $('tapes').innerHTML = sections.map((s, i) =>
+      `<div class="tape${active === s ? ' active' : ''}" data-i="${i}" style="left:${pct(s.start)};width:calc(${pct(s.end)} - ${pct(s.start)})"></div>`
+    ).join('');
+  }
+  function seekFromPointer(e) {
+    const rect = $('track').getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    if (duration) v.currentTime = x / rect.width * duration;
+    cancelCount();
+    drawProgress();
+  }
+  function bindTrack() {
+    const track = $('track');
+    let dragging = false;
+    track.addEventListener('pointerdown', e => { dragging = true; track.setPointerCapture(e.pointerId); seekFromPointer(e); });
+    track.addEventListener('pointermove', e => { if (dragging) seekFromPointer(e); });
+    track.addEventListener('pointerup', () => { dragging = false; });
+    track.addEventListener('pointercancel', () => { dragging = false; });
+    track.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') { v.currentTime = Math.max(0, v.currentTime - 1); e.preventDefault(); }
+      if (e.key === 'ArrowRight') { v.currentTime = Math.min(duration, v.currentTime + 1); e.preventDefault(); }
+    });
+  }
+
+  // ---------- sections ----------
+  function renderSections() {
+    const box = $('sections');
+    box.hidden = !sections.length;            // no parts marked yet: the A–B loop below still works
+    // 所有段落 is "on" only when nothing is being looped (no part, no finished A–B)
+    const whole = !active && !(A !== null && B !== null && B > A);
+    box.innerHTML = `<button class="all" data-i="-1" aria-pressed="${whole}">所有段落<span class="en">All parts</span></button>` +
+      sections.map((s, i) =>
+        `<button data-i="${i}" aria-pressed="${active === s}" title="${fmt(s.start)}–${fmt(s.end)}">${escapeHtml(s.name)}` +
+        (s.en ? `<span class="en">${escapeHtml(s.en)}</span>` : '') + '</button>'
+      ).join('');
+    drawTapes();
+    if (MARK) renderMarkList();
+  }
+  function pickSection(i) {
+    if (i < 0) {                               // 所有段落: stop looping a part, keep playing as is
+      active = null; A = null; B = null; drawMarks(); renderSections(); setShareParam(null); return;
+    }
+    const s = sections[i];                     // tapping the current part again restarts it
+    active = s; A = null; B = null; drawMarks();
+    renderSections();
+    setShareParam(i + 1);
+    if (!prefs.loop) setToggle('loop', true);
+    v.currentTime = s.start;
+    primeMedia();
+    countIn(doPlay);
+  }
+  // Keep &s=N in the address bar so a copied link opens on the same part.
+  function setShareParam(n) {
+    try {
+      const u = new URL(location.href);
+      if (n) u.searchParams.set('s', n); else u.searchParams.delete('s');
+      history.replaceState(null, '', u);
+    } catch (e) { /* file:// */ }
+  }
+  const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // ---------- A–B ----------
+  function setA() {
+    A = Math.round(v.currentTime * 10) / 10;
+    if (B !== null && B <= A) B = null;
+    active = null; renderSections(); drawMarks();
+    notice(`起点 A：${fmt(A, true)}`);
+  }
+  function setB() {
+    const t = Math.round(v.currentTime * 10) / 10;
+    if (A === null || t <= A) { notice('先设起点 A，再在它之后设终点 B'); return; }
+    B = t; active = null; renderSections(); drawMarks();
+    if (!prefs.loop) setToggle('loop', true);
+    notice(`已圈好 ${fmt(A, true)} – ${fmt(B, true)}`);
+  }
+  function clearAB() { A = null; B = null; drawMarks(); renderSections(); }
+
+  // ---------- mark mode (owner) ----------
+  function renderMarkList() {
+    $('markList').innerHTML = sections.map((s, i) =>
+      `<li><span>${escapeHtml(s.name)}${s.en ? ' · ' + escapeHtml(s.en) : ''} <span class="t">${fmt(s.start, true)}–${fmt(s.end, true)}</span></span><button data-del="${i}">删除</button></li>`
+    ).join('');
+  }
+  const draftKey = () => 'markDraft.' + cfg.slug;   // one draft per MV
+  function saveSection() {
+    const name = $('secName').value.trim(), en = $('secEn').value.trim();
+    if (A === null || B === null || B <= A) { notice('先设好起点 A 和终点 B'); return; }
+    if (!name) { $('secName').focus(); notice('给这一段起个名字'); return; }
+    sections.push(en ? { name, en, start: A, end: B } : { name, start: A, end: B });
+    sections.sort((a, b) => a.start - b.start);
+    store.set(draftKey(), sections);
+    $('secName').value = ''; $('secEn').value = '';
+    clearAB(); renderSections();
+    notice(`已保存「${name}」`);
+  }
+  async function copyJson() {
+    // times are on whatever video this MV's page is playing (the original MV, before a cut exists)
+    const out = JSON.stringify({ slug: cfg.slug, video: cfg.video,
+      sections: sections.map(s => ({ name: s.name, ...(s.en ? { en: s.en } : {}), start: s.start, end: s.end })) }, null, 2);
+    try { await navigator.clipboard.writeText(out); }
+    catch (e) {
+      const ta = document.createElement('textarea'); ta.value = out; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    $('copied').hidden = false; setTimeout(() => { $('copied').hidden = true; }, 1800);
+  }
+
+  // ---------- wiring ----------
+  function bind() {
+    $('play').addEventListener('click', togglePlay);
+    $('speeds').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setRate(Number(b.dataset.rate)); });
+    $('rate').addEventListener('input', e => setRate(Number(e.target.value)));
+    $('tLoop').addEventListener('click', () => setToggle('loop', !prefs.loop));
+    $('tMirror').addEventListener('click', () => setToggle('mirror', !prefs.mirror));
+    $('tCount').addEventListener('click', () => setToggle('count', !prefs.count));
+    $('sections').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) pickSection(Number(b.dataset.i)); });
+    $('fsBtn').addEventListener('click', toggleFs);
+    $('fsPlay').addEventListener('click', togglePlay);
+    $('fsSpeeds').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setRate(Number(b.dataset.rate)); });
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+    ['pointerdown', 'pointermove'].forEach(ev => stage.addEventListener(ev, () => { if (fsOn) wakeIdle(); }));
+    $('setA').addEventListener('click', setA);
+    $('setB').addEventListener('click', setB);
+    $('clearAB').addEventListener('click', clearAB);
+    if (MARK) {
+      $('mark').hidden = false;
+      $('saveSec').addEventListener('click', saveSection);
+      $('copyJson').addEventListener('click', copyJson);
+      $('markList').addEventListener('click', e => {
+        const b = e.target.closest('button[data-del]'); if (!b) return;
+        const s = sections[Number(b.dataset.del)];
+        if (active === s) active = null;
+        sections.splice(Number(b.dataset.del), 1);
+        store.set(draftKey(), sections); renderSections();
+      });
+    }
+
+    v.addEventListener('play', () => { setPlayLabel(counting ? '取消' : '暂停');   // the first tap's iOS unlock also fires 'play' mid-count
+      keepAwake(true); if (fsOn) wakeIdle(); });
+    v.addEventListener('pause', () => { if (!counting) setPlayLabel('播放'); keepAwake(false); });
+    v.addEventListener('waiting', () => notice('缓冲中…', 0));
+    v.addEventListener('playing', () => { $('notice').hidden = true; });
+    v.addEventListener('error', () => notice('视频加载失败，请检查网络后刷新', 0));
+    v.addEventListener('loadedmetadata', () => {
+      duration = v.duration || 0;
+      $('tDur').textContent = fmt(duration);
+      $('track').setAttribute('aria-valuemax', Math.round(duration));
+      setRate(prefs.rate);              // some browsers reset playbackRate on load
+      drawTapes(); drawMarks(); drawProgress();
+    });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !v.paused) keepAwake(true); });
+
+    document.addEventListener('keydown', e => {
+      if ((e.target.closest && e.target.closest('input, textarea')) || e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === ' ') { e.preventDefault(); togglePlay(); }
+      else if (k === 'f') toggleFs();
+      else if (k === 'escape' && fsOn && !fsElement()) exitFs();   // full-window mode; real fullscreen exits natively
+      else if (k === 'arrowleft' && e.target !== $('track')) { cancelCount(); v.currentTime = Math.max(0, v.currentTime - 3); }
+      else if (k === 'arrowright' && e.target !== $('track')) { cancelCount(); v.currentTime = Math.min(duration, v.currentTime + 3); }
+      else if (k >= '1' && k <= '5') setRate([0.5, 0.6, 0.75, 0.9, 1][Number(k) - 1]);
+      else if (k === 'l') setToggle('loop', !prefs.loop);
+      else if (k === 'm') setToggle('mirror', !prefs.mirror);
+      else if (k === 'c') setToggle('count', !prefs.count);
+      else if (k === 'a') setA();
+      else if (k === 'b') setB();
+    });
+  }
+
+  // ---------- which page: catalog (2+ MVs, no ?mv=) or one MV's practice room ----------
+  const getJson = async url => {
+    const r = await fetch(url + '?v=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  };
+  const SLUG_OK = /^[a-z0-9-]{1,40}$/;
+
+  function showCatalog(mvs, missing) {
+    $('room').hidden = true;
+    $('catalog').hidden = false;
+    document.title = 'XZ Dance Room · XZ 舞蹈练习室';
+    if (missing) $('catalog').querySelector('.intro-line').textContent = '找不到这个 MV，请从下面选一支 · MV not found — pick one below';
+    $('cards').innerHTML = mvs.map(m => {
+      const secs = Math.round(m.danceSeconds || 0), mm = Math.floor(secs / 60), ss = secs % 60;
+      const year = (m.released || '').slice(0, 4);
+      const dance = secs ? ` · ${mm ? mm + ' 分 ' : ''}${ss} 秒舞蹈` : '';
+      const danceEn = secs ? ` · ${mm ? mm + 'm ' : ''}${ss}s of dance` : '';
+      const n = m.sections || 0;
+      return `<a class="card" href="?mv=${encodeURIComponent(m.slug)}">
+        <div class="poster"${m.poster ? ` style="background-image:url('${escapeHtml(m.poster)}')"` : ''}></div>
+        <div class="meta">
+          <h2>${escapeHtml(m.title)}${m.titleEn ? `<span class="en">${escapeHtml(m.titleEn)}</span>` : ''}</h2>
+          <div class="facts">${year}${year && n ? ' · ' : ''}${n ? n + ' 段' : ''}${dance}<br><span class="en">${n ? n + (n > 1 ? ' parts' : ' part') : ''}${danceEn}</span></div>
+        </div></a>`;
+    }).join('');
+  }
+
+  async function init() {
+    let mvs = [];
+    try { mvs = ((await getJson('mvs/index.json')).mvs || []).filter(m => m && SLUG_OK.test(m.slug || '')); }
+    catch (e) { /* opened from disk: FALLBACK below */ }
+    let slug = params.get('mv');
+    if (!slug) {
+      if (mvs.length >= 2) { showCatalog(mvs); return; }
+      slug = mvs.length ? mvs[0].slug : FALLBACK.slug;   // only one MV: open it straight away
+    }
+    if (!SLUG_OK.test(slug)) slug = '';
+    try {
+      if (!slug) throw new Error('bad slug');
+      cfg = { ...FALLBACK, ...(await getJson(`mvs/${slug}.json`)), slug };
+    } catch (e) {
+      if (mvs.length >= 2) { showCatalog(mvs, true); return; }
+      if (mvs.length === 1 && slug !== mvs[0].slug) { location.replace('./'); return; }
+      cfg = FALLBACK;   // from disk
+    }
+    if (mvs.length >= 2) $('backAll').hidden = false;
+
+    sections = (cfg.sections || []).map(s => ({ ...s }));
+    if (MARK) {
+      const draft = store.get(draftKey(), null);
+      if (Array.isArray(draft) && draft.length) sections = draft;
+    }
+    // header stays the site name; the line under it names this MV (English only once official)
+    document.title = `${cfg.title} · XZ 舞蹈练习室`;
+    $('mvSub').innerHTML = `${escapeHtml(cfg.title)} · MV 练习版` +
+      (cfg.titleEn ? ` <span class="en">${escapeHtml(cfg.titleEn)}</span>` : '');
+    // Links back to the official posts (credit + lets fans like/repost the original).
+    const srcs = (cfg.sources || []).filter(s => s && /^https?:\/\//.test(s.url || ''));
+    if (srcs.length) {
+      $('sources').innerHTML = '<span>喜欢就去原视频点赞、转发 ❤ <span class="en">Like &amp; share the original</span>：</span><div class="chips">' + srcs.map(s =>
+        `<a href="${escapeHtml(s.url)}" target="_blank" rel="noopener">${escapeHtml(s.label || s.url)}${s.labelEn ? ` <span class="en">${escapeHtml(s.labelEn)}</span>` : ''} ↗</a>`
+      ).join('') + '</div>';
+      $('sources').hidden = false;
+      $('official').hidden = false;
+    }
+    // Official full MV through Douyin's own embeddable player. Not loaded until tapped:
+    // saves fans' data, and nothing from Douyin runs on the page unless they ask for it.
+    const dy = cfg.douyinEmbed && /^\d+$/.test(String(cfg.douyinEmbed.vid || '')) ? cfg.douyinEmbed : null;
+    if (!dy) {   // links only (no embeddable Douyin post): hide the empty player parts
+      $('officialBubble').hidden = true;
+      $('officialFrame').hidden = true;
+    }
+    if (dy) {
+      $('official').hidden = false;
+      $('officialBy').textContent = dy.by ? `抖音 Douyin · ${dy.by}` : '抖音 Douyin';
+      // one friendly line per visit, nudging fans to the official post
+      const lines = ['跳累了？来看抖音 MV 原视频 ✨', '歇口气～ 去原视频点个赞 ❤',
+                     '练得不错！看看原版找找感觉 👀', '原版 MV 在这里，顺手点赞转发支持一下 🙌'];
+      $('officialBubble').textContent = lines[Math.floor(Math.random() * lines.length)];
+      const openOfficial = async (scroll) => {
+        $('nudge').hidden = true;
+        if (!v.paused) v.pause();
+        cancelCount();
+        if (fsOn) await exitFs();
+        if (!$('officialFrame').querySelector('iframe')) {
+          $('officialFrame').innerHTML =
+            `<iframe src="https://open.douyin.com/player/video?vid=${dy.vid}&autoplay=1" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="unsafe-url" title="官方原版 MV（抖音）"></iframe>`;
+        }
+        if (scroll) {
+          // let the page re-lay itself out after leaving fullscreen before scrolling,
+          // otherwise the scroll lands short (seen: block stayed at the bottom edge)
+          await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+          await new Promise(r => setTimeout(r, 60));
+          $('official').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+        }
+      };
+      $('officialLoad').addEventListener('click', () => openOfficial(false));
+      $('officialBubble').addEventListener('click', () => openOfficial(false));
+      $('nudgeGo').addEventListener('click', () => openOfficial(true));
+      $('nudgeStay').addEventListener('click', () => { $('nudge').hidden = true; });
+
+      // After 10 minutes of actual practice (video playing, not counting), suggest a break once
+      // per visit. Never pauses the dance; fades by itself after 12 s.
+      let practiced = 0, nudged = false;
+      setInterval(() => {
+        if (nudged || v.paused || counting || document.hidden) return;
+        if (++practiced >= 600) {
+          nudged = true;
+          $('nudge').hidden = false;
+          setTimeout(() => { $('nudge').hidden = true; }, 12000);
+        }
+      }, 1000);
+    }
+    if (cfg.poster) v.poster = cfg.poster;
+    v.src = cfg.video;
+    // ?s=N (a shared link): select part N and wait at its start. No autoplay: browsers block
+    // it without a tap, and the count-in needs the viewer ready anyway.
+    const pre = sections[Number(params.get('s')) - 1];
+    if (pre && !MARK) {
+      active = pre;
+      if (!prefs.loop) prefs.loop = true;
+      v.addEventListener('loadedmetadata', () => {
+        v.currentTime = pre.start; drawProgress();
+        notice(`已选「${pre.name}」· 点「播放」开始`, 3500);
+      }, { once: true });
+    }
+    setRate(prefs.rate);
+    setToggle('mirror', prefs.mirror);
+    setToggle('loop', prefs.loop);
+    setToggle('count', prefs.count);
+    bind(); bindTrack();
+    renderSections(); drawMarks();
+    requestAnimationFrame(watch);
+  }
+  init();
+})();
+</script>
+</body>
+</html>
