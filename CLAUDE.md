@@ -40,8 +40,8 @@ A static page that helps the fan group learn Xiao Zhan's MV dances: slow the vid
   "title": "异想天开",               // "titleEn": add only once an OFFICIAL English title exists — never a pinyin guess
   "artist": "肖战", "artistEn": "Xiao Zhan",
   "released": "2026-10-04", "bpm": 119,
-  "video":  "https://assets.xz-studio-gallery.com/dance/<slug>/practice_1080p.mp4",
-  "poster": "https://assets.xz-studio-gallery.com/dance/<slug>/poster.jpg",
+  "video":  "https://assets.xz-studio-gallery.com/dance/<slug>/practice_1080p.<8-hex fingerprint>.mp4",
+  "poster": "https://assets.xz-studio-gallery.com/dance/<slug>/poster.<8-hex fingerprint>.jpg",
   "sources": [{"label": "肖战微博", "labelEn": "Weibo", "url": "…"}],   // "open the original" chips
   "douyinEmbed": {"vid": "<numeric id>", "by": "肖战工作室"},          // optional; omit = links only
   "sections": [{"name": "第1段", "en": "Part 1", "start": 4.6, "end": 19.8}],   // times in the PRACTICE CUT
@@ -63,13 +63,13 @@ A static page that helps the fan group learn Xiao Zhan's MV dances: slow the vid
    - The draft lives in localStorage `xzdance.markDraft.<slug>`. That is per browser, so mark on one device.
 4. **Pick a poster frame.** Choose a frame time for `build.posterAt`. This is in seconds of the *practice cut*.
 5. **Build and check without uploading.** Run `python tools/make_cut.py <slug>`. Look at the cards and verify the output.
-6. **Upload.** Run `python tools/make_cut.py <slug> --upload`. This uploads to `dance/<slug>/` and re-downloads from the CDN to compare. Add `--replace` to overwrite an existing cut. It also rewrites `video`, `poster` and `sections`, and the catalog entry (each with a `.bak`).
+6. **Upload.** Run `python tools/make_cut.py <slug> --upload`. This uploads to `dance/<slug>/` under fingerprinted names (`practice_1080p.<hash>.mp4`, `poster.<hash>.jpg`) and re-downloads from the CDN to compare. A rebuild therefore always gets a new address — never re-upload over the same name, the CDN caches for a month. It prints the previous files it replaced; delete those from R2 only after asking. It also rewrites `video`, `poster` and `sections`, and the catalog entry (each with a `.bak`).
 7. **Preview and push.** With 2+ MVs, the home page switches to the catalog automatically.
 
 ## Practice cut: why it's built this way
 
 - **Why a cut at all:** fans only download the dance (~53 MB at 1080p, versus the full MV), and the copyright/credit is burned in.
-  - Each part is introduced by a bilingual chapter card.
+  - Each part is introduced by a bilingual chapter card (第N段 in the support red `#FF1005`, matching the page's count-in; it was yellow until 2026-10-06).
   - The corner text reads "MV 版权归原作者 · 仅供练舞 · 请勿转载" / "© Original MV · practice use only".
 - **Frame snapping:** every cut point is snapped to a whole frame (25 fps), and the card lasts 40 frames. Without this, the audio drifts a little further after every part (+20/+60/+80 ms was measured).
 - **Verify step:** the build refuses to upload unless audio is within 40 ms and the frame NCC is at least 0.7 at the start, middle and end of each part.

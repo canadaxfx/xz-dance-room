@@ -3,6 +3,11 @@
     python tools/make_cut.py <slug>            # build + verify, writes nothing to R2
     python tools/make_cut.py <slug> --upload   # ... then upload video + poster to R2 and update mvs/*.json
 
+Uploaded file names carry a short content fingerprint (practice_1080p.<8 hex>.mp4, poster.<8 hex>.jpg),
+so a rebuilt cut always gets a NEW address: the CDN caches for a month and would otherwise keep
+serving the old copy. The previous files stay on R2 until someone deletes them (they're excluded
+from autosync's orphan check, so nothing flags them).
+
 Reads mvs/<slug>.json -> build.original (full MV URL) and build.sections (times in the ORIGINAL).
 For each section: a chapter card (build.card s, bilingual name), then the section with build.lead s
 before and build.tail s after. 1080p H.264/AAC, +faststart, small bilingual copyright line burned in.
@@ -68,7 +73,7 @@ def build(mv, work):
         dur = ce - cs
         parts.append(
             f"color=c=0x0D1736:s={W}x{H}:r={FPS}:d={card},"
-            f"drawtext=fontfile='{YAHEI_BOLD}':textfile=zh{i}.txt:fontsize=150:fontcolor=0xFFC93C:x=(w-tw)/2:y=(h-th)/2-80,"
+            f"drawtext=fontfile='{YAHEI_BOLD}':textfile=zh{i}.txt:fontsize=150:fontcolor=0xFF1005:x=(w-tw)/2:y=(h-th)/2-80,"
             f"drawtext=fontfile='{BAHN}':textfile=en{i}.txt:fontsize=64:fontcolor=0xDCE3F0:x=(w-tw)/2:y=(h/2)+50,"
             f"drawtext=fontfile='{YAHEI}':textfile=sub.txt:fontsize=34:fontcolor=0x8592B5:x=(w-tw)/2:y=(h/2)+160,"
             f"format=yuv420p,setsar=1[c{i}];"
@@ -197,16 +202,23 @@ def main():
         return
 
     base = f'dance/{a.slug}/'
-    mv['video'] = upload(out, base + 'practice_1080p.mp4', 'video/mp4', a.replace)
-    mv['poster'] = upload(poster, base + 'poster.jpg', 'image/jpeg', a.replace)
+    tag = lambda f: hashlib.sha256(open(f, 'rb').read()).hexdigest()[:8]
+    old = (mv.get('video'), mv.get('poster'))
+    mv['video'] = upload(out, base + f'practice_1080p.{tag(out)}.mp4', 'video/mp4', a.replace)
+    mv['poster'] = upload(poster, base + f'poster.{tag(poster)}.jpg', 'image/jpeg', a.replace)
+    for o in old:
+        if o and o not in (mv['video'], mv['poster']):
+            print(f'  no longer used (delete from R2 when sure): {o}')
     mv['sections'] = [{'name': s['name'], 'en': s['en'], 'start': s['start'], 'end': s['end']} for s in newmap]
     save_json(mv_path, mv)
 
     idx_path = os.path.join(ROOT, 'mvs', 'index.json')
     idx = json.load(open(idx_path, encoding='utf-8')) if os.path.exists(idx_path) else {'mvs': []}
-    entry = {'slug': a.slug, 'title': mv['title'], 'titleEn': mv.get('titleEn', ''), 'released': mv.get('released', ''),
+    entry = {'slug': a.slug, 'title': mv['title'], 'released': mv.get('released', ''),
              'poster': mv['poster'], 'sections': len(newmap),
              'danceSeconds': round(sum(s['end'] - s['start'] for s in newmap))}
+    if mv.get('titleEn'):                      # only once an official English title exists
+        entry = {'slug': entry.pop('slug'), 'title': entry.pop('title'), 'titleEn': mv['titleEn'], **entry}
     idx['mvs'] = sorted([m for m in idx['mvs'] if m['slug'] != a.slug] + [entry],
                         key=lambda m: m.get('released', ''), reverse=True)
     save_json(idx_path, idx)

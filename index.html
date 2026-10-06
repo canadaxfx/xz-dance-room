@@ -229,10 +229,11 @@
     margin: 0 0 14px;
     padding: 10px 16px;
     min-height: 0;
-    background: var(--panel);
-    color: var(--mirror);
-    border: 2px solid var(--tape);
+    background: #2E4189;          /* same blue as the chosen pill */
+    color: #fff;
+    border: 0;
     border-radius: 18px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
     font-weight: 700;
     font-size: 15px;
     animation: pop .5s cubic-bezier(.3, 1.6, .5, 1) both;
@@ -243,7 +244,7 @@
     left: 28px;
     bottom: -8px;
     border: 8px solid transparent;
-    border-top-color: var(--tape);
+    border-top-color: #2E4189;
     border-bottom: 0;
   }
   .bubble:hover { filter: brightness(1.06); }
@@ -266,19 +267,19 @@
     justify-content: center;
     max-width: calc(100% - 24px);
     padding: 10px 12px 10px 16px;
-    background: var(--panel);
-    color: var(--mirror);
-    border: 2px solid var(--tape);
+    background: #2E4189;
+    color: #fff;
+    border: 0;
     border-radius: 18px;
     font-weight: 700;
     font-size: 14px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
     animation: pop .5s cubic-bezier(.3, 1.6, .5, 1) both;
   }
   .nudge[hidden] { display: none; }
   .nudge button { min-height: 34px; padding: 4px 12px; font-size: 13px; border-radius: 999px; }
   .nudge .go { background: var(--mirror); color: var(--corridor); border-color: var(--mirror); }
-  .nudge .stay { background: transparent; color: var(--mirror); border-color: var(--line); }
+  .nudge .stay { background: transparent; color: #fff; border-color: rgba(220, 227, 240, .35); }
 
   /* ---------- sources ---------- */
   .sources { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--haze); }
@@ -766,7 +767,7 @@
     </div>
     <div class="notice" id="notice" hidden></div>
     <div class="nudge" id="nudge" role="status" hidden>
-      <span>练了 10 分钟啦！歇一会儿，看看抖音原版 MV ☕</span>
+      <span>练了 10 分钟啦！歇一会儿，看看抖音原版&nbsp;MV&nbsp;☕</span>
       <button class="go" id="nudgeGo">去看看</button>
       <button class="stay" id="nudgeStay">继续练</button>
     </div>
@@ -881,7 +882,7 @@
   const FALLBACK = {
     slug: 'yixiangtiankai',
     title: '异想天开',
-    video: 'https://assets.xz-studio-gallery.com/dance/yixiangtiankai/practice_1080p.mp4',
+    video: 'https://assets.xz-studio-gallery.com/dance/yixiangtiankai/practice_1080p.e85b982c.mp4',
     bpm: 119,
     sections: []
   };
@@ -1376,7 +1377,7 @@
       $('officialBy').textContent = dy.by ? `抖音 Douyin · ${dy.by}` : '抖音 Douyin';
       // one friendly line per visit, nudging fans to the official post
       const lines = ['跳累了？来看抖音 MV 原视频 ✨', '歇口气～ 去原视频点个赞 ❤',
-                     '练得不错！看看原版找找感觉 👀', '原版 MV 在这里，顺手点赞转发支持一下 🙌'];
+                     '练得不错！看看原版找找感觉 👀', '原版 MV 在这里，点赞支持一下 🙌'];
       $('officialBubble').textContent = lines[Math.floor(Math.random() * lines.length)];
       const openOfficial = async (scroll) => {
         $('nudge').hidden = true;
