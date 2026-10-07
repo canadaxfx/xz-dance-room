@@ -1,3 +1,4 @@
 _backup/
 *.bak*
 __pycache__/
+tests/output/
