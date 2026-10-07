@@ -18,7 +18,7 @@ frames — otherwise video and audio drift apart a little more after every secti
 middle and end of every section and refuses to upload if anything is off.
 
 No credentials live in this repo: R2 keys come from env vars R2_ACCOUNT_ID / R2_ACCESS_KEY_ID /
-R2_SECRET_ACCESS_KEY / R2_BUCKET, or from the autosync app.py on this PC.
+R2_SECRET_ACCESS_KEY / R2_BUCKET, or from autosync's secrets.json in Nextcloud (XZ-autosync/secrets.json).
 """
 import argparse, hashlib, io, json, os, re, shutil, subprocess, sys, urllib.request
 import numpy as np
@@ -30,7 +30,7 @@ W, H, FPS = 1436, 1080, 25
 YAHEI_BOLD = "C\\:/Windows/Fonts/msyhbd.ttc"
 YAHEI = "C\\:/Windows/Fonts/msyh.ttc"
 BAHN = "C\\:/Windows/Fonts/bahnschrift.ttf"
-AUTOSYNC_APP = r'C:\Users\yvonz\Nextcloud\AI Tools\XZ-autosync\code\app.py'
+AUTOSYNC_SECRETS = r'C:\Users\yvonz\Nextcloud\AI Tools\XZ-autosync\secrets.json'
 
 
 def sh(cmd, **kw):
@@ -136,11 +136,10 @@ def verify(out, src, newmap):
 
 def r2_client():
     keys = {k: os.environ.get(k) for k in ('R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET')}
-    if not all(keys.values()) and os.path.exists(AUTOSYNC_APP):
-        srcs = open(AUTOSYNC_APP, encoding='utf-8').read()
-        get = lambda k: (re.search(k + r"\s*=\s*'([^']+)'", srcs) or [None, None])[1]
-        keys = {'R2_ACCOUNT_ID': get('R2_ACCOUNT_ID'), 'R2_ACCESS_KEY_ID': get('R2_ACCESS_KEY_ID'),
-                'R2_SECRET_ACCESS_KEY': get('R2_SECRET_ACCESS_KEY'), 'R2_BUCKET': get('R2_BUCKET_NAME')}
+    if not all(keys.values()) and os.path.exists(AUTOSYNC_SECRETS):
+        r2 = json.load(open(AUTOSYNC_SECRETS, encoding='utf-8'))['r2']
+        keys = {'R2_ACCOUNT_ID': r2['account_id'], 'R2_ACCESS_KEY_ID': r2['access_key_id'],
+                'R2_SECRET_ACCESS_KEY': r2['secret_access_key'], 'R2_BUCKET': 'xzstudiogallery'}
     if not all(keys.values()):
         sys.exit('R2 credentials not found (set R2_* env vars)')
     import boto3

@@ -78,7 +78,7 @@ A static page that helps the fan group learn Xiao Zhan's MV dances: slow the vid
 ## R2 and the other tools
 
 - **Bucket:** `xzstudiogallery` (CDN `assets.xz-studio-gallery.com`), prefix `dance/<slug>/`.
-- **No credentials in this repo.** The tools read env vars `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET`, or parse autosync's `app.py` on this PC.
+- **No credentials in this repo.** The tools read env vars `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET`, or read autosync's `secrets.json` (Nextcloud `XZ-autosync/secrets.json`, shared by both PCs; keys are no longer in any code file).
 - **Autosync orphan check:** it skips `dance/` (`_excluded_prefixes` in autosync `app.py`), so these files are never flagged as orphans. Keep it that way.
 - **Old objects:** `dance/yxtk_practice_1080p.mp4` (first cut, "Section N" cards) and the yellow-card `dance/yixiangtiankai/practice_1080p.mp4` + `poster.jpg` were deleted from R2 on 2026-10-06; local copies are in `_backup/r2/`. Live files: `practice_1080p.e85b982c.mp4`, `poster.522c410d.jpg`.
 
