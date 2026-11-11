@@ -683,6 +683,8 @@
   /* ---------- home tabs: MV 练习 / 演唱会版 (same segmented look as the part tabs) ---------- */
   .hometabs { margin: 0 0 14px; }
   .hometabs[hidden] { display: none; }
+  .hometabs.slim button { min-height: 34px; padding: 3px 10px; font-size: 14px; }
+  .hometabs.slim button .en { display: inline; margin-left: 5px; }
 
   /* ---------- concert page (embedded Douyin, watch-along) ---------- */
   .concert[hidden] { display: none; }
@@ -691,13 +693,24 @@
   .vpick select { flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--mirror); background: var(--panel);
     border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; min-height: 42px; text-overflow: ellipsis; }
   .vpick .vstep { flex: none; width: 44px; font-size: 22px; line-height: 1; padding: 0; }
-  .cframe { position: relative; width: min(100%, 360px, calc((100vh - 24px) / 2)); aspect-ratio: 1 / 2;   /* whole player fits the window */ margin: 0 auto; background: #000;
+  .cframe { position: relative; width: 100%; height: 300px;   /* height set by fitDouyin(): 16:9 + Douyin's control bar */ margin: 0 auto; background: #000;
     border-radius: var(--radius); overflow: hidden; }
   .cframe iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-  .cframe.mirrored { transform: scaleX(-1); }
+  .cmir { position: absolute; inset: 0; overflow: hidden; }
+  .cframe.mirrored .cmir { transform: scaleX(-1); }   /* on the inner layer: a full-screen element itself loses its transform */
+  .cframe:fullscreen { border-radius: 0; background: #000; }
+  .cframe.fill { position: fixed !important; inset: 0; width: auto !important; height: auto !important; margin: 0; z-index: 1000; border-radius: 0; }
+  body.cfill { overflow: hidden; }
+  .cfsbar { display: none; position: absolute; top: 8px; left: 8px; z-index: 2; gap: 6px; }
+  .cframe:fullscreen .cfsbar, .cframe.fill .cfsbar { display: flex; }
+  .cfsbar button { min-height: 34px; padding: 4px 10px; font-size: 13px; color: #fff; background: rgba(10, 18, 48, .75); }
+  .cfsbar button[aria-pressed="true"] { background: #2E4189; }
   .credit { margin: 10px 0 0; text-align: center; font-size: 13px; color: var(--haze); overflow-wrap: anywhere; }
   .credit a { color: var(--peri); white-space: nowrap; }
-  .ctoggles { display: flex; justify-content: center; margin-top: 12px; }
+  .crow { display: flex; justify-content: center; align-items: stretch; gap: 8px; margin-top: 12px; }
+  .ctoggles { display: flex; }
+  .cfs { white-space: nowrap; }
+  .cfs .en { display: block; font-size: 11px; }
   .cnote { margin: 8px 0 0; text-align: center; font-size: 12px; color: var(--haze); }
   .cnote .en { display: block; }
   /* ---------- footer: sister sites, CanadaXFX line, terms ---------- */
@@ -758,13 +771,15 @@
     <span class="sub" id="mvSub">肖战 MV 练习版 <span class="en">MV dance practice</span></span>
   </header>
 
+  <!-- MV 练习 / 演唱会版 tabs on EVERY page once concert videos exist (concerts/index.json):
+       the lit tab tells people which section they're in; on the practice pages it's slimmer. -->
+  <div class="parts hometabs" id="homeTabs" role="tablist" hidden>
+    <button data-tab="mv" role="tab">MV 练习<span class="en">MV practice</span></button>
+    <button data-tab="concert" role="tab">演唱会版<span class="en">Concert</span></button>
+  </div>
+
   <!-- home: one card per MV (only shown when there are 2+ MVs) -->
   <main class="catalog" id="catalog" hidden>
-    <!-- MV 练习 / 演唱会版 tabs: only when concert videos exist (concerts/index.json) -->
-    <div class="parts hometabs" id="homeTabs" role="tablist" hidden>
-      <button data-tab="mv" role="tab">MV 练习<span class="en">MV practice</span></button>
-      <button data-tab="concert" role="tab">演唱会版<span class="en">Concert</span></button>
-    </div>
     <p class="intro-line">选一支 MV 开始练 <span class="en">Pick an MV to practise</span></p>
     <div class="cards" id="cards"></div>
   </main>
@@ -885,8 +900,8 @@
        Douyin's player can't be slowed, looped or counted in by this page (see CLAUDE.md). -->
   <main class="concert" id="concert" hidden>
     <section class="intro">
-      <p>演唱会版是嵌入的抖音原视频：可以换机位、开镜像，但<b>不能调速、循环或数拍子</b>。
-        <span class="en">Concert videos are embedded from Douyin: switch versions and mirror them, but slow-down, loop and count-in aren't available.</span></p>
+      <p>演唱会版是嵌入的抖音原视频：可以换机位、开镜像；点播放器里的「1.0x」最慢可调到 <b>0.75×</b>，但<b>不能循环或数拍子</b>。
+        <span class="en">Concert videos are embedded from Douyin: switch versions and mirror them; tap the player's 1.0x to slow down to 0.75× at most. Loop and count-in aren't available.</span></p>
       <p id="cMvTip" hidden>想慢速分段练？用 <a id="cMvLink" href="./">MV 练习版 →</a>
         <span class="en">For slow-motion part practice, use the MV practice room.</span></p>
     </section>
@@ -895,12 +910,23 @@
       <select id="cVer" aria-label="机位 Version"></select>
       <button class="vstep" id="cNext" aria-label="下一个机位 Next version">›</button>
     </div>
-    <div class="cframe" id="cFrame"></div>
-    <p class="credit" id="cCredit"></p>
-    <div class="toggles ctoggles">
-      <button id="cMirror" aria-pressed="false">镜像<span class="en">Mirror</span></button>
+    <!-- the player box: our own 全屏 makes THIS box full-screen, so the mirror (on .cmir inside) stays.
+         Douyin's own ⛶ can't keep it: browsers cancel transforms on whatever is full-screen. -->
+    <div class="cframe" id="cFrame">
+      <div class="cmir" id="cMir"></div>
+      <div class="cfsbar">
+        <button id="cFsMirror" aria-pressed="false">镜像 Mirror</button>
+        <button id="cFsExit">✕ 退出全屏</button>
+      </div>
     </div>
-    <p class="cnote">镜像时抖音播放器的按钮、文字也会左右翻转。<span class="en">Mirroring also flips Douyin's own buttons and text.</span></p>
+    <p class="credit" id="cCredit"></p>
+    <div class="crow">
+      <div class="toggles ctoggles">
+        <button id="cMirror" aria-pressed="false">镜像<span class="en">Mirror</span></button>
+      </div>
+      <button id="cFs" class="cfs">⛶ 全屏<span class="en">Full screen</span></button>
+    </div>
+    <p class="cnote">镜像时抖音播放器的按钮、文字也会左右翻转。要全屏请用这里的「全屏」，抖音自带的 ⛶ 全屏会取消镜像。<span class="en">Mirroring also flips Douyin's own buttons and text. Use this 全屏 button for full screen — Douyin's own ⛶ drops the mirror.</span></p>
     <p class="cnote" id="cParts" hidden></p>
   </main>
 
@@ -1370,7 +1396,7 @@
     const draw = tab => {
       tabs.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.tab === tab));
       if (tab === 'concert') {
-        line.innerHTML = '演唱会全程舞蹈，多个机位可选 · 只能看，不能调速、循环 <span class="en">Full concert dances in several versions — watch-along only, no slow-down or loop</span>';
+        line.innerHTML = '演唱会全程舞蹈，多个机位可选 · 最慢 0.75×，不能循环 <span class="en">Full concert dances in several versions — down to 0.75×, no loop</span>';
         $('cards').innerHTML = concertCards(concerts);
       } else {
         line.innerHTML = missing ? '找不到这个页面，请从下面选一个 · Not found — pick one below'
@@ -1381,13 +1407,32 @@
     };
     if (concerts.length) {
       $('mvSub').innerHTML = '肖战 MV · 演唱会舞蹈 <span class="en">MV &amp; concert dances</span>';
-      tabs.hidden = false;
-      tabs.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-        draw(b.dataset.tab);
-        history.replaceState(null, '', b.dataset.tab === 'concert' ? '?tab=concert' : './');
-      }));
+      showTabs('home', mvs, concerts, tab => {
+        draw(tab);
+        history.replaceState(null, '', tab === 'concert' ? '?tab=concert' : './');
+      });
     }
     draw(concerts.length && params.get('tab') === 'concert' ? 'concert' : 'mv');
+  }
+
+  // The MV 练习 / 演唱会版 bar (shown only when concert songs exist). `where`: 'home' (switches in place via
+  // onPick), 'mv' or 'concert' (practice pages: lit tab = this section; tapping goes to that section).
+  function showTabs(where, mvs, concerts, onPick) {
+    const tabs = $('homeTabs');
+    if (!concerts.length) return false;
+    tabs.hidden = false;
+    tabs.classList.toggle('slim', where !== 'home');
+    tabs.querySelectorAll('button').forEach(b => {
+      if (where !== 'home') b.setAttribute('aria-pressed', b.dataset.tab === where);
+      b.addEventListener('click', () => {
+        const tab = b.dataset.tab;
+        if (onPick) return onPick(tab);
+        if (tab === 'concert') { location.href = '?tab=concert'; return; }
+        if (where === 'mv' && mvs.length < 2) return;                 // already in the only MV
+        location.href = mvs.length === 1 ? '?mv=' + encodeURIComponent(mvs[0].slug) : './';
+      });
+    });
+    return true;
   }
 
   function concertCards(songs) {
@@ -1403,12 +1448,10 @@
   }
 
   // Concert page: one song, many embedded Douyin versions. Watch-along only (no speed / loop / count-in).
-  function showConcert(song, mvs) {
+  function showConcert(song, mvs, concerts) {
     $('room').hidden = true;
     $('concert').hidden = false;
-    const back = $('backAll');
-    back.hidden = false; back.href = '?tab=concert';
-    back.innerHTML = '← 全部演唱会版 <span class="en">All concert videos</span>';
+    showTabs('concert', mvs, concerts);              // replaces the old "← 全部演唱会版" link
     document.title = `${song.title} · 演唱会版 · XZ 舞蹈练习室`;
     $('mvSub').innerHTML = `${escapeHtml(song.title)} · 演唱会版 <span class="en">Concert</span>`;
     if (song.mv && mvs.some(m => m.slug === song.mv)) {
@@ -1416,6 +1459,36 @@
       $('cMvTip').hidden = false;
     }
     const vers = song.versions, sel = $('cVer'), frame = $('cFrame');
+    // Douyin's own speed menu (0.75–2×) only exists in its wide layout (mode=pc), and only when the player is at
+    // least 503 px wide. That layout is always 16:9 + a 35 px control bar (its code: height = 9w/16 + 35).
+    // So the player is laid out ≥ 520 px wide and shrunk to fit the box: phones get the speed menu too.
+    const isFull = () => document.fullscreenElement === frame || document.webkitFullscreenElement === frame || frame.classList.contains('fill');
+    const fitDouyin = () => {
+      const ifr = frame.querySelector('iframe'), full = isFull();
+      const fw = frame.clientWidth, fh = frame.clientHeight, W = Math.max(520, fw), H = 9 * W / 16 + 35;
+      const k = full ? Math.min(fw / W, fh / H) : fw / W;          // full screen: fit both ways, centred
+      if (!full) frame.style.height = Math.round(H * k) + 'px';
+      if (ifr) Object.assign(ifr.style, { width: W + 'px', height: H + 'px', transform: `scale(${k})`, transformOrigin: '0 0',
+        left: (full ? (fw - W * k) / 2 : 0) + 'px', top: (full ? (fh - H * k) / 2 : 0) + 'px', right: 'auto', bottom: 'auto' });
+    };
+    addEventListener('resize', fitDouyin);
+    document.addEventListener('fullscreenchange', fitDouyin);
+    document.addEventListener('webkitfullscreenchange', fitDouyin);
+    // Our 全屏: the Fullscreen API on the box; iPhone (no element full-screen) and in-app browsers where the
+    // request doesn't settle within 0.8 s (WeChat…) fill the browser window instead — same idea as the MV room.
+    const fill = on => { frame.classList.toggle('fill', on); document.body.classList.toggle('cfill', on); fitDouyin(); };
+    $('cFs').addEventListener('click', () => {
+      const req = frame.requestFullscreen || frame.webkitRequestFullscreen;
+      if (!req || /iPhone|iPod/.test(navigator.userAgent)) return fill(true);
+      let settled = false;
+      Promise.resolve(req.call(frame)).then(() => { settled = true; }, () => { settled = true; fill(true); });
+      setTimeout(() => { if (!settled && !isFull()) fill(true); }, 800);
+    });
+    $('cFsExit').addEventListener('click', () => {
+      if (frame.classList.contains('fill')) return fill(false);
+      (document.exitFullscreen || document.webkitExitFullscreen || (() => {})).call(document);
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && frame.classList.contains('fill')) fill(false); });
     sel.innerHTML = vers.map((x, i) =>
       `<option value="${i}">机位 ${i + 1} · ${escapeHtml([x.show, x.note].filter(Boolean).join(' '))}${x.duration ? ' · ' + fmt(x.duration) : ''} · ${escapeHtml(x.by || '')}</option>`).join('');
     const go = i => {
@@ -1423,10 +1496,8 @@
       const x = vers[i];
       sel.value = String(i);
       $('cPrev').disabled = i === 0; $('cNext').disabled = i === vers.length - 1;
-      // Douyin's portrait player is a fixed 720 px tall unless told its size in px (% leaves it blank),
-      // so pass the box's real size; it then fits without an inner scrollbar.
-      const box = frame.getBoundingClientRect();
-      frame.innerHTML = `<iframe src="https://open.douyin.com/player/video?vid=${x.vid}&autoplay=0&width=${Math.round(box.width)}px&height=${Math.round(box.height)}px" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="unsafe-url" title="${escapeHtml(song.title)} · 机位 ${i + 1}（抖音）"></iframe>`;
+      $('cMir').innerHTML = `<iframe src="https://open.douyin.com/player/video?vid=${x.vid}&autoplay=0&mode=pc" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="unsafe-url" title="${escapeHtml(song.title)} · 机位 ${i + 1}（抖音）"></iframe>`;
+      fitDouyin();
       $('cCredit').innerHTML = `拍摄 cr. ${escapeHtml(x.by || '')}${x.dyid ? `（抖音号 ${escapeHtml(x.dyid)}）` : ''} · ` +
         `<a href="https://www.douyin.com/video/${x.vid}" target="_blank" rel="noopener">在抖音打开原视频、点赞 ↗</a>`;
       const parts = (x.parts || []).filter(p => p && isFinite(p.start) && isFinite(p.end));
@@ -1441,8 +1512,9 @@
     $('cNext').addEventListener('click', () => go(+sel.value + 1));
     // Mirror flips the whole embedded player (its own buttons too); same stored preference as the MV room.
     const mir = $('cMirror');
-    const setMir = on => { prefs.mirror = on; store.set('mirror', on); mir.setAttribute('aria-pressed', on); frame.classList.toggle('mirrored', on); };
+    const setMir = on => { prefs.mirror = on; store.set('mirror', on); mir.setAttribute('aria-pressed', on); $('cFsMirror').setAttribute('aria-pressed', on); frame.classList.toggle('mirrored', on); };
     mir.addEventListener('click', () => setMir(mir.getAttribute('aria-pressed') !== 'true'));
+    $('cFsMirror').addEventListener('click', () => setMir(mir.getAttribute('aria-pressed') !== 'true'));   // the same switch, inside full screen
     setMir(!!prefs.mirror);
     go((parseInt(params.get('v'), 10) || 1) - 1);
   }
@@ -1476,7 +1548,7 @@
     const cslug = params.get('concert');
     if (cslug !== null) {
       const song = concerts.find(s => s.slug === cslug);
-      if (song) { showConcert(song, mvs); return; }
+      if (song) { showConcert(song, mvs, concerts); return; }
       if (home) { showCatalog(mvs, concerts, true); return; }
     }
     let slug = params.get('mv');
@@ -1493,10 +1565,7 @@
       if (mvs.length === 1 && slug !== mvs[0].slug) { location.replace('./'); return; }
       cfg = FALLBACK;   // from disk
     }
-    if (home) {
-      $('backAll').hidden = false;
-      if (mvs.length < 2) $('backAll').innerHTML = '← 首页 <span class="en">Home</span>';
-    }
+    if (home && !showTabs('mv', mvs, concerts)) $('backAll').hidden = false;   // tabs when concerts exist, else "← 全部 MV"
 
     sections = (cfg.sections || []).map(s => ({ ...s }));
     if (MARK) {
