@@ -11,7 +11,8 @@
           "show": "上海",
           "note": "近景直拍",
           "duration": 275,
-          "dyid": "xiaoxiao.zan"
+          "dyid": "xiaoxiao.zan",
+          "vertical": false
         },
         {
           "vid": "7705967317368992091",
@@ -19,7 +20,8 @@
           "show": "上海",
           "note": "近景直拍",
           "duration": 268,
-          "dyid": "378224"
+          "dyid": "378224",
+          "vertical": true
         },
         {
           "vid": "7705544162251562831",
@@ -27,7 +29,8 @@
           "show": "上海",
           "note": "4K直拍",
           "duration": 266,
-          "dyid": "Flipped_10051115"
+          "dyid": "Flipped_10051115",
+          "vertical": true
         },
         {
           "vid": "7705851551663744485",
@@ -35,7 +38,8 @@
           "show": "上海",
           "note": "近景直拍",
           "duration": 265,
-          "dyid": "161632781"
+          "dyid": "161632781",
+          "vertical": true
         },
         {
           "vid": "7705240094604545892",
@@ -43,7 +47,8 @@
           "show": "上海",
           "note": "近景直拍",
           "duration": 258,
-          "dyid": "HoeXM_0711"
+          "dyid": "HoeXM_0711",
+          "vertical": true
         },
         {
           "vid": "7706052168041851761",
@@ -51,7 +56,8 @@
           "show": "上海",
           "note": "近景直拍",
           "duration": 253,
-          "dyid": "127554907"
+          "dyid": "127554907",
+          "vertical": true
         }
       ]
     }

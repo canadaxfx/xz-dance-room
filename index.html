@@ -707,6 +707,10 @@
   .cfsbar button[aria-pressed="true"] { background: #2E4189; }
   .credit { margin: 10px 0 0; text-align: center; font-size: 13px; color: var(--haze); overflow-wrap: anywhere; }
   .credit a { color: var(--peri); white-space: nowrap; }
+  .cview { margin: 0 0 10px; }
+  .cview[hidden] { display: none; }
+  .cview button { min-height: 36px; padding: 3px 10px; font-size: 14px; }
+  .cview button .en { display: inline; margin-left: 5px; }
   .crow { display: flex; justify-content: center; align-items: stretch; gap: 8px; margin-top: 12px; }
   .ctoggles { display: flex; }
   .cfs { white-space: nowrap; }
@@ -900,8 +904,8 @@
        Douyin's player can't be slowed, looped or counted in by this page (see CLAUDE.md). -->
   <main class="concert" id="concert" hidden>
     <section class="intro">
-      <p>演唱会版是嵌入的抖音原视频：可以换机位、开镜像；点播放器里的「1.0x」最慢可调到 <b>0.75×</b>，但<b>不能循环或数拍子</b>。
-        <span class="en">Concert videos are embedded from Douyin: switch versions and mirror them; tap the player's 1.0x to slow down to 0.75× at most. Loop and count-in aren't available.</span></p>
+      <p>演唱会版是嵌入的抖音原视频：可以换机位、开镜像；点播放器里的「1.0x」最慢可调到 <b>0.75×</b>（竖屏视频先选「可调速」），但<b>不能循环或数拍子</b>。
+        <span class="en">Concert videos are embedded from Douyin: switch versions and mirror them; tap the player's 1.0x to slow down to 0.75× at most (for portrait videos, pick "Speed" first). Loop and count-in aren't available.</span></p>
       <p id="cMvTip" hidden>想慢速分段练？用 <a id="cMvLink" href="./">MV 练习版 →</a>
         <span class="en">For slow-motion part practice, use the MV practice room.</span></p>
     </section>
@@ -912,6 +916,11 @@
     </div>
     <!-- the player box: our own 全屏 makes THIS box full-screen, so the mirror (on .cmir inside) stays.
          Douyin's own ⛶ can't keep it: browsers cancel transforms on whatever is full-screen. -->
+    <!-- portrait versions only: big picture (Douyin's tall player) or speed (its wide player, which has 0.75×) -->
+    <div class="parts cview" id="cView" role="group" aria-label="竖屏视频的播放器 Player for portrait videos" hidden>
+      <button data-view="big">大画面<span class="en">Big picture</span></button>
+      <button data-view="speed">可调速 0.75×<span class="en">Speed</span></button>
+    </div>
     <div class="cframe" id="cFrame">
       <div class="cmir" id="cMir"></div>
       <div class="cfsbar">
@@ -1463,9 +1472,17 @@
     // least 503 px wide. That layout is always 16:9 + a 35 px control bar (its code: height = 9w/16 + 35).
     // So the player is laid out ≥ 520 px wide and shrunk to fit the box: phones get the speed menu too.
     const isFull = () => document.fullscreenElement === frame || document.webkitFullscreenElement === frame || frame.classList.contains('fill');
+    // A PORTRAIT version (vertical, set by the tour admin from Douyin's video size) uses Douyin's tall phone layout
+    // instead: its natural 360x720 frame scaled into a 1:2 box (no speed menu there — Douyin only offers it wide).
+    // Portrait versions: the viewer picks 大画面 (tall player, big picture) or 可调速 (wide player with Douyin's speed
+    // menu, picture small with side bars). Remembered per viewer (localStorage xzdance.portraitView), default 大画面.
+    let cur = null, portraitView = store.get('portraitView', 'big') === 'speed' ? 'speed' : 'big';
+    const tall = () => !!(cur && cur.vertical) && portraitView === 'big';
     const fitDouyin = () => {
-      const ifr = frame.querySelector('iframe'), full = isFull();
-      const fw = frame.clientWidth, fh = frame.clientHeight, W = Math.max(520, fw), H = 9 * W / 16 + 35;
+      const ifr = frame.querySelector('iframe'), full = isFull(), vert = tall();
+      if (!full) frame.style.width = vert ? Math.floor(Math.min(frame.parentElement.clientWidth, 360, (innerHeight - 24) / 2)) + 'px' : '';
+      const fw = frame.clientWidth, fh = frame.clientHeight;
+      const W = vert ? 360 : Math.max(520, fw), H = vert ? 720 : 9 * W / 16 + 35;
       const k = full ? Math.min(fw / W, fh / H) : fw / W;          // full screen: fit both ways, centred
       if (!full) frame.style.height = Math.round(H * k) + 'px';
       if (ifr) Object.assign(ifr.style, { width: W + 'px', height: H + 'px', transform: `scale(${k})`, transformOrigin: '0 0',
@@ -1496,7 +1513,10 @@
       const x = vers[i];
       sel.value = String(i);
       $('cPrev').disabled = i === 0; $('cNext').disabled = i === vers.length - 1;
-      $('cMir').innerHTML = `<iframe src="https://open.douyin.com/player/video?vid=${x.vid}&autoplay=0&mode=pc" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="unsafe-url" title="${escapeHtml(song.title)} · 机位 ${i + 1}（抖音）"></iframe>`;
+      cur = x;
+      $('cView').hidden = !x.vertical;
+      $('cView').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === portraitView));
+      $('cMir').innerHTML = `<iframe src="https://open.douyin.com/player/video?vid=${x.vid}&autoplay=0${tall() ? '' : '&mode=pc'}" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="unsafe-url" title="${escapeHtml(song.title)} · 机位 ${i + 1}（抖音）"></iframe>`;
       fitDouyin();
       $('cCredit').innerHTML = `拍摄 cr. ${escapeHtml(x.by || '')}${x.dyid ? `（抖音号 ${escapeHtml(x.dyid)}）` : ''} · ` +
         `<a href="https://www.douyin.com/video/${x.vid}" target="_blank" rel="noopener">在抖音打开原视频、点赞 ↗</a>`;
@@ -1516,6 +1536,11 @@
     mir.addEventListener('click', () => setMir(mir.getAttribute('aria-pressed') !== 'true'));
     $('cFsMirror').addEventListener('click', () => setMir(mir.getAttribute('aria-pressed') !== 'true'));   // the same switch, inside full screen
     setMir(!!prefs.mirror);
+    $('cView').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      if (b.dataset.view === portraitView) return;
+      portraitView = b.dataset.view; store.set('portraitView', portraitView);
+      go(+sel.value);                                 // reload the player in the other Douyin layout
+    }));
     go((parseInt(params.get('v'), 10) || 1) - 1);
   }
 
