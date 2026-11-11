@@ -676,6 +676,30 @@
   .card h2 { margin: 0; font-size: 18px; }
   .card h2 .en { font-family: var(--display); font-weight: 800; color: var(--tape); letter-spacing: .06em; margin-left: 6px; font-size: 15px; }
   .card .facts { margin-top: 4px; font-size: 13px; color: var(--haze); }
+  /* concert card: no still of its own (Douyin covers are signed URLs that expire), so a plain title tile */
+  .card .poster.stage-tile { display: grid; place-items: center; background: radial-gradient(ellipse at 50% 30%, #2E4189, #0A1230 70%);
+    font-size: 26px; font-weight: 800; letter-spacing: .1em; color: #fff; }
+
+  /* ---------- home tabs: MV 练习 / 演唱会版 (same segmented look as the part tabs) ---------- */
+  .hometabs { margin: 0 0 14px; }
+  .hometabs[hidden] { display: none; }
+
+  /* ---------- concert page (embedded Douyin, watch-along) ---------- */
+  .concert[hidden] { display: none; }
+  .intro a { color: var(--peri); font-weight: 700; }
+  .vpick { display: flex; gap: 6px; margin: 0 0 10px; }
+  .vpick select { flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--mirror); background: var(--panel);
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; min-height: 42px; text-overflow: ellipsis; }
+  .vpick .vstep { flex: none; width: 44px; font-size: 22px; line-height: 1; padding: 0; }
+  .cframe { position: relative; width: min(100%, 360px, calc((100vh - 24px) / 2)); aspect-ratio: 1 / 2;   /* whole player fits the window */ margin: 0 auto; background: #000;
+    border-radius: var(--radius); overflow: hidden; }
+  .cframe iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .cframe.mirrored { transform: scaleX(-1); }
+  .credit { margin: 10px 0 0; text-align: center; font-size: 13px; color: var(--haze); overflow-wrap: anywhere; }
+  .credit a { color: var(--peri); white-space: nowrap; }
+  .ctoggles { display: flex; justify-content: center; margin-top: 12px; }
+  .cnote { margin: 8px 0 0; text-align: center; font-size: 12px; color: var(--haze); }
+  .cnote .en { display: block; }
   /* ---------- footer: sister sites, CanadaXFX line, terms ---------- */
   .foot {
     margin-top: 32px;
@@ -736,6 +760,11 @@
 
   <!-- home: one card per MV (only shown when there are 2+ MVs) -->
   <main class="catalog" id="catalog" hidden>
+    <!-- MV 练习 / 演唱会版 tabs: only when concert videos exist (concerts/index.json) -->
+    <div class="parts hometabs" id="homeTabs" role="tablist" hidden>
+      <button data-tab="mv" role="tab">MV 练习<span class="en">MV practice</span></button>
+      <button data-tab="concert" role="tab">演唱会版<span class="en">Concert</span></button>
+    </div>
     <p class="intro-line">选一支 MV 开始练 <span class="en">Pick an MV to practise</span></p>
     <div class="cards" id="cards"></div>
   </main>
@@ -851,6 +880,29 @@
     <div class="sources" id="sources" hidden></div>
   </section>
   </div><!-- /room -->
+
+  <!-- concert video: an embedded Douyin post, several versions (机位). Watch-along only:
+       Douyin's player can't be slowed, looped or counted in by this page (see CLAUDE.md). -->
+  <main class="concert" id="concert" hidden>
+    <section class="intro">
+      <p>演唱会版是嵌入的抖音原视频：可以换机位、开镜像，但<b>不能调速、循环或数拍子</b>。
+        <span class="en">Concert videos are embedded from Douyin: switch versions and mirror them, but slow-down, loop and count-in aren't available.</span></p>
+      <p id="cMvTip" hidden>想慢速分段练？用 <a id="cMvLink" href="./">MV 练习版 →</a>
+        <span class="en">For slow-motion part practice, use the MV practice room.</span></p>
+    </section>
+    <div class="vpick">
+      <button class="vstep" id="cPrev" aria-label="上一个机位 Previous version">‹</button>
+      <select id="cVer" aria-label="机位 Version"></select>
+      <button class="vstep" id="cNext" aria-label="下一个机位 Next version">›</button>
+    </div>
+    <div class="cframe" id="cFrame"></div>
+    <p class="credit" id="cCredit"></p>
+    <div class="toggles ctoggles">
+      <button id="cMirror" aria-pressed="false">镜像<span class="en">Mirror</span></button>
+    </div>
+    <p class="cnote">镜像时抖音播放器的按钮、文字也会左右翻转。<span class="en">Mirroring also flips Douyin's own buttons and text.</span></p>
+    <p class="cnote" id="cParts" hidden></p>
+  </main>
 
   <footer class="foot">
     <p class="more"><span>更多肖战作品 <span class="en">More Xiao Zhan</span></span>
@@ -1309,12 +1361,94 @@
   };
   const SLUG_OK = /^[a-z0-9-]{1,40}$/;
 
-  function showCatalog(mvs, missing) {
+  // Home: MV cards, plus a 演唱会版 tab once concerts/index.json lists any songs (?tab=concert opens it).
+  function showCatalog(mvs, concerts, missing) {
     $('room').hidden = true;
     $('catalog').hidden = false;
     document.title = 'XZ Dance Room · XZ 舞蹈练习室';
-    if (missing) $('catalog').querySelector('.intro-line').textContent = '找不到这个 MV，请从下面选一支 · MV not found — pick one below';
-    $('cards').innerHTML = mvs.map(m => {
+    const tabs = $('homeTabs'), line = $('catalog').querySelector('.intro-line');
+    const draw = tab => {
+      tabs.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.tab === tab));
+      if (tab === 'concert') {
+        line.innerHTML = '演唱会全程舞蹈，多个机位可选 · 只能看，不能调速、循环 <span class="en">Full concert dances in several versions — watch-along only, no slow-down or loop</span>';
+        $('cards').innerHTML = concertCards(concerts);
+      } else {
+        line.innerHTML = missing ? '找不到这个页面，请从下面选一个 · Not found — pick one below'
+                     : mvs.length > 1 ? '选一支 MV 开始练 · 可调速、循环、数拍子 <span class="en">Pick an MV to practise — slow-down, loop and count-in</span>'
+                                      : 'MV 练习版 · 可调速、循环、数拍子 <span class="en">MV practice — slow-down, loop and count-in</span>';
+        $('cards').innerHTML = mvCards(mvs);
+      }
+    };
+    if (concerts.length) {
+      $('mvSub').innerHTML = '肖战 MV · 演唱会舞蹈 <span class="en">MV &amp; concert dances</span>';
+      tabs.hidden = false;
+      tabs.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+        draw(b.dataset.tab);
+        history.replaceState(null, '', b.dataset.tab === 'concert' ? '?tab=concert' : './');
+      }));
+    }
+    draw(concerts.length && params.get('tab') === 'concert' ? 'concert' : 'mv');
+  }
+
+  function concertCards(songs) {
+    return songs.map(s => {
+      const n = s.versions.length, cities = [...new Set(s.versions.map(x => x.show).filter(Boolean))].join(' / ');
+      return `<a class="card" href="?concert=${encodeURIComponent(s.slug)}">
+        <div class="poster stage-tile">演唱会版</div>
+        <div class="meta">
+          <h2>${escapeHtml(s.title)}</h2>
+          <div class="facts">${n} 个机位${cities ? ' · ' + escapeHtml(cities) : ''}<br><span class="en">${n} version${n > 1 ? 's' : ''}</span></div>
+        </div></a>`;
+    }).join('');
+  }
+
+  // Concert page: one song, many embedded Douyin versions. Watch-along only (no speed / loop / count-in).
+  function showConcert(song, mvs) {
+    $('room').hidden = true;
+    $('concert').hidden = false;
+    const back = $('backAll');
+    back.hidden = false; back.href = '?tab=concert';
+    back.innerHTML = '← 全部演唱会版 <span class="en">All concert videos</span>';
+    document.title = `${song.title} · 演唱会版 · XZ 舞蹈练习室`;
+    $('mvSub').innerHTML = `${escapeHtml(song.title)} · 演唱会版 <span class="en">Concert</span>`;
+    if (song.mv && mvs.some(m => m.slug === song.mv)) {
+      $('cMvLink').href = '?mv=' + encodeURIComponent(song.mv);
+      $('cMvTip').hidden = false;
+    }
+    const vers = song.versions, sel = $('cVer'), frame = $('cFrame');
+    sel.innerHTML = vers.map((x, i) =>
+      `<option value="${i}">机位 ${i + 1} · ${escapeHtml([x.show, x.note].filter(Boolean).join(' '))}${x.duration ? ' · ' + fmt(x.duration) : ''} · ${escapeHtml(x.by || '')}</option>`).join('');
+    const go = i => {
+      i = Math.max(0, Math.min(vers.length - 1, i));
+      const x = vers[i];
+      sel.value = String(i);
+      $('cPrev').disabled = i === 0; $('cNext').disabled = i === vers.length - 1;
+      // Douyin's portrait player is a fixed 720 px tall unless told its size in px (% leaves it blank),
+      // so pass the box's real size; it then fits without an inner scrollbar.
+      const box = frame.getBoundingClientRect();
+      frame.innerHTML = `<iframe src="https://open.douyin.com/player/video?vid=${x.vid}&autoplay=0&width=${Math.round(box.width)}px&height=${Math.round(box.height)}px" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="unsafe-url" title="${escapeHtml(song.title)} · 机位 ${i + 1}（抖音）"></iframe>`;
+      $('cCredit').innerHTML = `拍摄 cr. ${escapeHtml(x.by || '')}${x.dyid ? `（抖音号 ${escapeHtml(x.dyid)}）` : ''} · ` +
+        `<a href="https://www.douyin.com/video/${x.vid}" target="_blank" rel="noopener">在抖音打开原视频、点赞 ↗</a>`;
+      const parts = (x.parts || []).filter(p => p && isFinite(p.start) && isFinite(p.end));
+      $('cParts').hidden = !parts.length;
+      $('cParts').textContent = parts.length ? '段落（拖动进度条到这里）：' + parts.map(p => `${p.name} ${fmt(p.start)}–${fmt(p.end)}`).join(' · ') : '';
+      const q = new URLSearchParams({ concert: song.slug });
+      if (i) q.set('v', i + 1);
+      history.replaceState(null, '', '?' + q);
+    };
+    sel.addEventListener('change', () => go(+sel.value));
+    $('cPrev').addEventListener('click', () => go(+sel.value - 1));
+    $('cNext').addEventListener('click', () => go(+sel.value + 1));
+    // Mirror flips the whole embedded player (its own buttons too); same stored preference as the MV room.
+    const mir = $('cMirror');
+    const setMir = on => { prefs.mirror = on; store.set('mirror', on); mir.setAttribute('aria-pressed', on); frame.classList.toggle('mirrored', on); };
+    mir.addEventListener('click', () => setMir(mir.getAttribute('aria-pressed') !== 'true'));
+    setMir(!!prefs.mirror);
+    go((parseInt(params.get('v'), 10) || 1) - 1);
+  }
+
+  function mvCards(mvs) {
+    return mvs.map(m => {
       const secs = Math.round(m.danceSeconds || 0), mm = Math.floor(secs / 60), ss = secs % 60;
       const year = (m.released || '').slice(0, 4);
       const dance = secs ? ` · ${mm ? mm + ' 分 ' : ''}${ss} 秒舞蹈` : '';
@@ -1330,12 +1464,24 @@
   }
 
   async function init() {
-    let mvs = [];
+    let mvs = [], concerts = [];
     try { mvs = ((await getJson('mvs/index.json')).mvs || []).filter(m => m && SLUG_OK.test(m.slug || '')); }
     catch (e) { /* opened from disk: FALLBACK below */ }
+    try {
+      concerts = ((await getJson('concerts/index.json')).songs || []).filter(s => s && SLUG_OK.test(s.slug || '') && Array.isArray(s.versions))
+        .map(s => ({ ...s, versions: s.versions.filter(x => x && /^\d+$/.test(String(x.vid || ''))) }))
+        .filter(s => s.versions.length);
+    } catch (e) { /* no concert videos yet */ }
+    const home = mvs.length >= 2 || concerts.length > 0;   // a home page exists (otherwise the one MV opens directly)
+    const cslug = params.get('concert');
+    if (cslug !== null) {
+      const song = concerts.find(s => s.slug === cslug);
+      if (song) { showConcert(song, mvs); return; }
+      if (home) { showCatalog(mvs, concerts, true); return; }
+    }
     let slug = params.get('mv');
     if (!slug) {
-      if (mvs.length >= 2) { showCatalog(mvs); return; }
+      if (home) { showCatalog(mvs, concerts); return; }
       slug = mvs.length ? mvs[0].slug : FALLBACK.slug;   // only one MV: open it straight away
     }
     if (!SLUG_OK.test(slug)) slug = '';
@@ -1343,11 +1489,14 @@
       if (!slug) throw new Error('bad slug');
       cfg = { ...FALLBACK, ...(await getJson(`mvs/${slug}.json`)), slug };
     } catch (e) {
-      if (mvs.length >= 2) { showCatalog(mvs, true); return; }
+      if (home) { showCatalog(mvs, concerts, true); return; }
       if (mvs.length === 1 && slug !== mvs[0].slug) { location.replace('./'); return; }
       cfg = FALLBACK;   // from disk
     }
-    if (mvs.length >= 2) $('backAll').hidden = false;
+    if (home) {
+      $('backAll').hidden = false;
+      if (mvs.length < 2) $('backAll').innerHTML = '← 首页 <span class="en">Home</span>';
+    }
 
     sections = (cfg.sections || []).map(s => ({ ...s }));
     if (MARK) {
