@@ -196,7 +196,13 @@
     z-index: 3;
   }
   .stage.fs .fsbar { display: flex; }
-  .stage.fs.idle .fsbar, .stage.fs.idle .fs-btn { opacity: 0; pointer-events: none; }
+  .stage.fs.idle .fsbar, .stage.fs.idle .fs-btn, .stage.fs.idle .fs-rot { opacity: 0; pointer-events: none; }
+  /* ⟲ 横屏 / 竖屏: next to 退出全屏, only in full screen */
+  .fs-rot { display: none; position: absolute; top: 8px; right: 104px; min-height: 36px; padding: 6px 10px; font-size: 13px;
+    background: rgba(13, 23, 54, .78); border-color: transparent; z-index: 3; }
+  .stage.fs .fs-rot { display: inline-flex; align-items: center; }
+  .stage.fs.rot { width: 100vh; width: 100dvh; height: 100vw; inset: auto; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(90deg); }   /* ⟲ in full-window mode (iPhone) */
   .stage.fs.idle { cursor: none; }
   .fsbar button { min-height: 44px; padding: 8px 12px; }
   .fsbar .fs-play { background: var(--mirror); color: var(--corridor); border-color: var(--mirror); font-weight: 800; min-width: 84px; }
@@ -719,6 +725,9 @@
   .cframe:fullscreen .cfsbar, .cframe.fill .cfsbar { display: flex; }
   .cfsbar button { min-height: 34px; padding: 4px 10px; font-size: 13px; color: #fff; background: rgba(10, 18, 48, .75); }
   .cfsbar button[aria-pressed="true"] { background: #2E4189; }
+  .cframe.fill.rot { width: 100vh !important; width: 100dvh !important; height: 100vw !important; inset: auto; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(90deg); }   /* ⟲ where the phone won't turn itself (iPhone, window-fill mode) */
+  @media (pointer: fine) { .frot { display: none !important; } }   /* ⟲ only on touch screens */
   .credit { margin: 10px 0 0; text-align: center; font-size: 13px; color: var(--haze); overflow-wrap: anywhere; }
   .credit a { color: var(--peri); white-space: nowrap; }
   .cview { margin: 0 0 10px; }
@@ -819,6 +828,7 @@
   <div class="stage" id="stage">
     <video id="v" playsinline preload="metadata"></video>
     <button class="fs-btn" id="fsBtn" aria-label="全屏">⛶ 全屏</button>
+    <button class="fs-rot frot" id="fsRot" title="横屏 / 竖屏 · Rotate">⟲ 横屏</button>
     <div class="fsbar" id="fsbar">
       <button id="fsPlay" class="fs-play">播放<span class="en">Play</span></button>
       <div class="fs-speeds" id="fsSpeeds">
@@ -948,6 +958,7 @@
       <div class="cfsbar">
         <button id="cFsMirror" aria-pressed="false">镜像 Mirror</button>
         <button id="cFsExit">✕ 退出全屏</button>
+        <button id="cFsRot" class="frot" title="横屏 / 竖屏 · Rotate">⟲ 横屏</button>
       </div>
     </div>
     <p class="credit" id="cCredit"></p>
@@ -961,6 +972,7 @@
     <ul class="ctips">
       <li>镜像时，抖音播放器的按钮和文字也会左右翻转。<span class="en">Mirroring also flips Douyin's own buttons and text.</span></li>
       <li>全屏：本页的「全屏」能镜像也能调速；抖音自带的 ⛶ 会取消镜像<span class="ponly">，但竖屏视频用它可以竖屏铺满、也能调速</span>。<span class="en">Full screen: this page's 全屏 keeps mirror and speed; Douyin's own ⛶ drops the mirror<span class="ponly"> — for portrait videos it fills the screen upright, with speed</span>.</span></li>
+      <li class="frot">全屏后点「⟲ 横屏」，可以把画面横过来看。<span class="en">In full screen, ⟲ 横屏 turns the picture sideways.</span></li>
       <li class="ponly" id="cPortraitTip" hidden>手机上看竖屏视频，选「大画面」画面更大。<span class="en">On a phone, "Big picture" gives portrait videos a larger view.</span></li>
     </ul>
     <p class="cnote" id="cParts" hidden></p>
@@ -1122,6 +1134,32 @@
     $('fsPlay').innerHTML = html;
   }
 
+  // ---------- ⟲ 横屏 / 竖屏 in full screen (concert page + MV room) ----------
+  // Android: the screen itself turns (screen.orientation.lock — only allowed in real full screen). Elsewhere (iPhone,
+  // full-window mode) the full-screen box is turned 90° by CSS (class "rot", sized to the turned screen). In real full
+  // screen where the lock is refused (e.g. iPad) the box can't be turned (browsers cancel transforms on full-screen
+  // elements), so the button asks to turn the device instead.
+  function makeRotator(box, btn, isReal, refit) {
+    let mode = null;   // "lock" | "css" | null
+    const label = () => { btn.textContent = mode ? '⟲ 竖屏' : '⟲ 横屏'; };
+    const reset = () => {
+      if (mode === 'lock') { try { screen.orientation.unlock(); } catch (e) {} }
+      mode = null; box.classList.remove('rot'); label();
+    };
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (mode === 'css') { box.classList.remove('rot'); mode = null; label(); refit && refit(); return; }
+      if (mode === 'lock') { try { await screen.orientation.lock('portrait'); } catch (err) {} mode = null; label(); return; }
+      if (isReal() && screen.orientation && screen.orientation.lock) {
+        try { await screen.orientation.lock('landscape'); mode = 'lock'; label(); return; } catch (err) {}
+      }
+      if (isReal()) { btn.textContent = '请把设备横过来'; setTimeout(label, 2500); return; }
+      box.classList.add('rot'); mode = 'css'; label(); refit && refit();
+    });
+    label();
+    return { reset, setLocked() { mode = 'lock'; label(); } };
+  }
+
   // ---------- fullscreen ----------
   // Real Fullscreen API where the browser allows it on an element (desktop, Android).
   // iPhone only lets <video> itself go fullscreen, which would hide the count-in and drop
@@ -1131,6 +1169,7 @@
   const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
 
   function applyFs(on) {
+    if (!on) rotM.reset();
     fsOn = on;
     stage.classList.toggle('fs', on);
     document.body.classList.toggle('fs-lock', on);
@@ -1153,7 +1192,7 @@
       if (fsElement()) {
         // Phones: turn sideways for the 4:3 MV when the browser allows it (Android Chrome).
         if (matchMedia('(pointer: coarse)').matches && screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock('landscape').catch(() => {});
+          screen.orientation.lock('landscape').then(() => rotM.setLocked(), () => {});   // ⟲ then offers 竖屏
         }
         return;   // fullscreenchange applies the state
       }
@@ -1169,6 +1208,7 @@
     }
   }
   const toggleFs = () => (fsOn ? exitFs() : enterFs());
+  const rotM = makeRotator(stage, $('fsRot'), () => fsElement() === stage, null);
   function onFsChange() { applyFs(!!fsElement()); }
 
   // In fullscreen the control bar hides after 3 s of playback so the dancers stay visible;
@@ -1531,11 +1571,16 @@
       Promise.resolve(req.call(frame)).then(() => { settled = true; }, () => { settled = true; fill(true); });
       setTimeout(() => { if (!settled && !isFull()) fill(true); }, 800);
     });
+    const rotC = makeRotator(frame, $('cFsRot'), () => document.fullscreenElement === frame || document.webkitFullscreenElement === frame, fitDouyin);
     $('cFsExit').addEventListener('click', () => {
+      rotC.reset();
       if (frame.classList.contains('fill')) return fill(false);
       (document.exitFullscreen || document.webkitExitFullscreen || (() => {})).call(document);
     });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && frame.classList.contains('fill')) fill(false); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && frame.classList.contains('fill')) { rotC.reset(); fill(false); } });
+    const offFs = () => { if (!document.fullscreenElement && !document.webkitFullscreenElement) rotC.reset(); };
+    document.addEventListener('fullscreenchange', offFs);
+    document.addEventListener('webkitfullscreenchange', offFs);
     sel.innerHTML = vers.map((x, i) =>
       `<option value="${i}">机位 ${i + 1} · ${escapeHtml([x.show, x.note].filter(Boolean).join(' '))}${x.duration ? ' · ' + fmt(x.duration) : ''} · ${escapeHtml(x.by || '')}</option>`).join('');
     const go = i => {
