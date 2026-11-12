@@ -719,6 +719,13 @@
   .cfs { white-space: nowrap; }
   .cfs .en { display: block; font-size: 11px; }
   .cnote { margin: 8px 0 0; text-align: center; font-size: 12px; color: var(--haze); }
+  .ctips { margin: 16px 0 0; padding: 12px 0 0 18px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.55; color: var(--haze); }
+  .ctips li { margin: 0 0 8px; }
+  .ctips li::marker { color: var(--peri); }
+  .ctips .en { display: block; font-size: 11.5px; opacity: .85; }
+  .ctips .en .ponly { display: inline; }
+  .ctips:not(.portrait) .ponly { display: none; }   /* portrait-only bits */
+  .ctips li[hidden] { display: none; }
   .cnote .en { display: block; }
   /* ---------- footer: sister sites, CanadaXFX line, terms ---------- */
   .foot {
@@ -907,8 +914,8 @@
        Douyin's player can't be slowed, looped or counted in by this page (see CLAUDE.md). -->
   <main class="concert" id="concert" hidden>
     <section class="intro">
-      <p>演唱会版是嵌入的抖音原视频：可以换机位、开镜像；点播放器里的「1.0x」最慢可调到 <b>0.75×</b>（竖屏视频先选「可调速」），但<b>不能循环或数拍子</b>。
-        <span class="en">Concert videos are embedded from Douyin: switch versions and mirror them; tap the player's 1.0x to slow down to 0.75× at most (for portrait videos, pick "Speed" first). Loop and count-in aren't available.</span></p>
+      <p>演唱会版是嵌入的抖音原视频：可以换机位、开镜像；点播放器里的「1.0x」最慢可调到 <b>0.75×</b>（竖屏视频选「大画面」时没有这个按钮），但<b>不能循环或数拍子</b>。
+        <span class="en">Concert videos are embedded from Douyin: switch versions and mirror them; tap the player's 1.0x to slow down to 0.75× at most (not in "Big picture" mode for portrait videos). Loop and count-in aren't available.</span></p>
       <p id="cMvTip" hidden>想慢速分段练？用 <a id="cMvLink" href="./">MV 练习版 →</a>
         <span class="en">For slow-motion part practice, use the MV practice room.</span></p>
     </section>
@@ -921,8 +928,8 @@
          Douyin's own ⛶ can't keep it: browsers cancel transforms on whatever is full-screen. -->
     <!-- portrait versions only: big picture (Douyin's tall player) or speed (its wide player, which has 0.75×) -->
     <div class="parts cview" id="cView" role="group" aria-label="竖屏视频的播放器 Player for portrait videos" hidden>
-      <button data-view="big">大画面<span class="en">Big picture</span></button>
       <button data-view="speed">可调速 0.75×<span class="en">Speed</span></button>
+      <button data-view="big">大画面<span class="en">Big picture</span></button>
     </div>
     <div class="cframe" id="cFrame">
       <div class="cmir" id="cMir"></div>
@@ -938,7 +945,12 @@
       </div>
       <button id="cFs" class="cfs">⛶ 全屏<span class="en">Full screen</span></button>
     </div>
-    <p class="cnote">镜像时抖音播放器的按钮、文字也会左右翻转。要全屏请用这里的「全屏」，抖音自带的 ⛶ 全屏会取消镜像。<span class="en">Mirroring also flips Douyin's own buttons and text. Use this 全屏 button for full screen — Douyin's own ⛶ drops the mirror.</span></p>
+    <!-- tips: one left-aligned list under a thin divider (the 2nd item only for portrait versions) -->
+    <ul class="ctips">
+      <li>镜像时，抖音播放器的按钮和文字也会左右翻转。<span class="en">Mirroring also flips Douyin's own buttons and text.</span></li>
+      <li>全屏：本页的「全屏」能镜像也能调速；抖音自带的 ⛶ 会取消镜像<span class="ponly">，但竖屏视频用它可以竖屏铺满、也能调速</span>。<span class="en">Full screen: this page's 全屏 keeps mirror and speed; Douyin's own ⛶ drops the mirror<span class="ponly"> — for portrait videos it fills the screen upright, with speed</span>.</span></li>
+      <li class="ponly" id="cPortraitTip" hidden>手机上看竖屏视频，选「大画面」画面更大。<span class="en">On a phone, "Big picture" gives portrait videos a larger view.</span></li>
+    </ul>
     <p class="cnote" id="cParts" hidden></p>
   </main>
 
@@ -1478,8 +1490,9 @@
     // A PORTRAIT version (vertical, set by the tour admin from Douyin's video size) uses Douyin's tall phone layout
     // instead: its natural 360x720 frame scaled into a 1:2 box (no speed menu there — Douyin only offers it wide).
     // Portrait versions: the viewer picks 大画面 (tall player, big picture) or 可调速 (wide player with Douyin's speed
-    // menu, picture small with side bars). Remembered per viewer (localStorage xzdance.portraitView), default 大画面.
-    let cur = null, portraitView = store.get('portraitView', 'big') === 'speed' ? 'speed' : 'big';
+    // menu, picture small with side bars). Remembered per viewer (localStorage xzdance.portraitView). Default 可调速 since
+    // 2026-11-12: with Douyin's own ⛶ it also gives a full-screen portrait view on tablets (big picture + speed).
+    let cur = null, portraitView = store.get('portraitView', 'speed') === 'big' ? 'big' : 'speed';
     const tall = () => !!(cur && cur.vertical) && portraitView === 'big';
     const fitDouyin = () => {
       const ifr = frame.querySelector('iframe'), full = isFull(), vert = tall();
@@ -1519,6 +1532,8 @@
       cur = x;
       $('cView').hidden = !x.vertical;
       $('cView').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === portraitView));
+      $('cPortraitTip').hidden = !x.vertical;
+      document.querySelector('.ctips').classList.toggle('portrait', !!x.vertical);
       $('cMir').innerHTML = `<iframe src="https://open.douyin.com/player/video?vid=${x.vid}&autoplay=0${tall() ? '' : '&mode=pc'}" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="unsafe-url" title="${escapeHtml(song.title)} · 机位 ${i + 1}（抖音）"></iframe>`;
       fitDouyin();
       $('cCredit').innerHTML = `拍摄 cr. ${escapeHtml(x.by || '')}${x.dyid ? `（抖音号 ${escapeHtml(x.dyid)}）` : ''} · ` +
