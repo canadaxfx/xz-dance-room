@@ -691,8 +691,11 @@
   .intro a { color: var(--peri); font-weight: 700; }
   .vpick { display: flex; gap: 6px; margin: 0 0 10px; }
   .vpick select { flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--mirror); background: var(--panel);
-    border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; min-height: 42px; text-overflow: ellipsis; }
-  .vpick .vstep { flex: none; width: 44px; font-size: 22px; line-height: 1; padding: 0; }
+    border: 1px solid rgba(220, 227, 240, .45); border-radius: var(--radius); padding: 8px 10px; min-height: 42px; text-overflow: ellipsis; }
+  .vpick .vstep { flex: none; width: 44px; font-size: 22px; line-height: 1; padding: 0; border-color: rgba(220, 227, 240, .45); }
+  /* clear light outline (like the tour site's tappable pills, in this site's white instead of red: red is only for loops) */
+  .vpick select:hover, .vpick .vstep:not(:disabled):hover, .vpick .vstep:not(:disabled):active { border-color: var(--tape); }
+  .vpick .vstep:disabled { border-color: var(--line); }
   .cframe { position: relative; width: 100%; height: 300px;   /* height set by fitDouyin(): 16:9 + Douyin's control bar */ margin: 0 auto; background: #000;
     border-radius: var(--radius); overflow: hidden; }
   .cframe iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
