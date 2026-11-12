@@ -198,9 +198,15 @@
   .stage.fs .fsbar { display: flex; }
   .stage.fs.idle .fsbar, .stage.fs.idle .fs-btn, .stage.fs.idle .fs-rot { opacity: 0; pointer-events: none; }
   /* ⟲ 横屏 / 竖屏: next to 退出全屏, only in full screen */
-  .fs-rot { display: none; position: absolute; top: 8px; right: 104px; min-height: 36px; padding: 6px 10px; font-size: 13px;
+  .fs-rot { display: none; position: absolute; top: 8px; right: 90px; min-height: 36px; padding: 6px 10px; font-size: 13px;
     background: rgba(13, 23, 54, .78); border-color: transparent; z-index: 3; }
   .stage.fs .fs-rot { display: inline-flex; align-items: center; }
+  /* full screen: keep 退出全屏 / ⟲ clear of camera notches and rounded corners (safe-area insets); in the CSS-turned box
+     (.rot) its top-right corner lands on the screen's right/bottom edges */
+  .stage.fs .fs-btn { top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); }
+  .stage.fs .fs-rot { top: max(8px, env(safe-area-inset-top)); right: calc(max(8px, env(safe-area-inset-right)) + 82px); }
+  .stage.fs.rot .fs-btn { top: max(8px, env(safe-area-inset-right)); right: max(8px, env(safe-area-inset-bottom)); }
+  .stage.fs.rot .fs-rot { top: max(8px, env(safe-area-inset-right)); right: calc(max(8px, env(safe-area-inset-bottom)) + 82px); }
   .stage.fs.rot { width: 100vh; width: 100dvh; height: 100vw; inset: auto; top: 50%; left: 50%;
     transform: translate(-50%, -50%) rotate(90deg); }   /* ⟲ in full-window mode (iPhone) */
   .stage.fs.idle { cursor: none; }
@@ -721,7 +727,11 @@
   .cframe:fullscreen { border-radius: 0; background: #000; }
   .cframe.fill { position: fixed !important; inset: 0; width: auto !important; height: auto !important; margin: 0; z-index: 1000; border-radius: 0; }
   body.cfill { overflow: hidden; }
-  .cfsbar { display: none; position: absolute; top: 8px; left: 8px; z-index: 2; gap: 6px; }
+  /* top-right like the MV room, clear of camera notches / rounded corners (safe-area insets; the CSS-turned box uses the
+     right/bottom insets, where its top-right corner lands) */
+  .cfsbar { display: none; position: absolute; z-index: 2; gap: 6px;
+    top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); }
+  .cframe.rot .cfsbar { top: max(8px, env(safe-area-inset-right)); right: max(8px, env(safe-area-inset-bottom)); }
   .cframe:fullscreen .cfsbar, .cframe.fill .cfsbar { display: flex; }
   .cfsbar button { min-height: 34px; padding: 4px 10px; font-size: 13px; color: #fff; background: rgba(10, 18, 48, .75); }
   .cfsbar button[aria-pressed="true"] { background: #2E4189; }
@@ -957,8 +967,8 @@
       <div class="cmir" id="cMir"></div>
       <div class="cfsbar">
         <button id="cFsMirror" aria-pressed="false">镜像 Mirror</button>
-        <button id="cFsExit">✕ 退出全屏</button>
         <button id="cFsRot" class="frot" title="横屏 / 竖屏 · Rotate">⟲ 横屏</button>
+        <button id="cFsExit">✕ 退出全屏</button>
       </div>
     </div>
     <p class="credit" id="cCredit"></p>
