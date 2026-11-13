@@ -752,6 +752,7 @@
   .cnote { margin: 8px 0 0; text-align: center; font-size: 12px; color: var(--haze); }
   .ctips { margin: 16px 0 0; padding: 12px 0 0 18px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.55; color: var(--haze); }
   .ctips li { margin: 0 0 8px; }
+  .ctips a { color: var(--peri); font-weight: 700; }
   .ctips li::marker { color: var(--peri); }
   .ctips .en { display: block; font-size: 11.5px; opacity: .85; }
   .ctips .en .ponly { display: inline; }
@@ -962,12 +963,6 @@
   <!-- concert video: an embedded Douyin post, several versions (机位). Watch-along only:
        Douyin's player can't be slowed, looped or counted in by this page (see CLAUDE.md). -->
   <main class="concert" id="concert" hidden>
-    <section class="intro">
-      <p>演唱会版是嵌入的抖音原视频：可以换机位、开镜像；点播放器里的「1.0x」最慢可调到 <b>0.75×</b>（竖屏视频选「大画面」时没有这个按钮），但<b>不能循环或数拍子</b>。
-        <span class="en">Concert videos are embedded from Douyin: switch versions and mirror them; tap the player's 1.0x to slow down to 0.75× at most (not in "Big picture" mode for portrait videos). Loop and count-in aren't available.</span></p>
-      <p id="cMvTip" hidden>想慢速分段练？用 <a id="cMvLink" href="./">MV 练习版 →</a>
-        <span class="en">For slow-motion part practice, use the MV practice room.</span></p>
-    </section>
     <div class="vpick">
       <button class="vstep" id="cPrev" aria-label="上一个机位 Previous version">‹</button>
       <select id="cVer" aria-label="机位 Version"></select>
@@ -997,6 +992,7 @@
     </div>
     <!-- tips: one left-aligned list under a thin divider (the 2nd item only for portrait versions) -->
     <ul class="ctips">
+      <li>抖音原视频嵌入：可以换机位、开镜像；点播放器的「1.0x」最慢调到 <b>0.75×</b><span class="ponly">（「大画面」模式没有这个按钮）</span>，但不能循环或数拍子<span id="cMvTip" hidden>，想慢速分段练用 <a id="cMvLink" href="./">MV 练习版 →</a></span>。<span class="en">Embedded from Douyin: switch versions and mirror; the player's 1.0x slows down to 0.75×<span class="ponly"> (not in "Big picture" mode)</span>. No loop or count-in<span id="cMvTipEn" hidden> — for slow part practice, use the MV practice room</span>.</span></li>
       <li>镜像时，抖音播放器的按钮和文字也会左右翻转。<span class="en">Mirroring also flips Douyin's own buttons and text.</span></li>
       <li>全屏：本页的「全屏」能镜像也能调速；抖音自带的 ⛶ 会取消镜像<span class="ponly">，但竖屏视频用它可以竖屏铺满、也能调速</span>。<span class="en">Full screen: this page's 全屏 keeps mirror and speed; Douyin's own ⛶ drops the mirror<span class="ponly"> — for portrait videos it fills the screen upright, with speed</span>.</span></li>
       <li class="frot">全屏后点「⟲ 横屏」，可以把画面横过来看。<span class="en">In full screen, ⟲ 横屏 turns the picture sideways.</span></li>
@@ -1603,7 +1599,7 @@
     $('mvSub').innerHTML = `${escapeHtml(song.title)} · 演唱会版 <span class="en">Concert</span>`;
     if (song.mv && mvs.some(m => m.slug === song.mv)) {
       $('cMvLink').href = '?mv=' + encodeURIComponent(song.mv);
-      $('cMvTip').hidden = false;
+      $('cMvTip').hidden = false; $('cMvTipEn').hidden = false;
     }
     const vers = song.versions, sel = $('cVer'), frame = $('cFrame');
     // Douyin's own speed menu (0.75–2×) only exists in its wide layout (mode=pc), and only when the player is at
