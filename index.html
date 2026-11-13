@@ -198,15 +198,16 @@
   .stage.fs .fsbar { display: flex; }
   .stage.fs.idle .fsbar, .stage.fs.idle .fs-btn, .stage.fs.idle .fs-rot { opacity: 0; pointer-events: none; }
   /* ⟲ 横屏 / 竖屏: next to 退出全屏, only in full screen */
-  .fs-rot { display: none; position: absolute; top: 8px; right: 90px; min-height: 36px; padding: 6px 10px; font-size: 13px;
+  .fs-rot { display: none; position: absolute; top: 8px; right: 90px; min-height: 30px; padding: 3px 9px; font-size: 12.5px;
     background: rgba(13, 23, 54, .78); border-color: transparent; z-index: 3; }
   .stage.fs .fs-rot { display: inline-flex; align-items: center; }
+  .stage.fs .fs-btn { min-height: 30px; padding: 3px 9px; font-size: 12.5px; }   /* slightly smaller in full screen (2026-11-12) */
   /* full screen: keep 退出全屏 / ⟲ clear of camera notches and rounded corners (safe-area insets); in the CSS-turned box
      (.rot) its top-right corner lands on the screen's right/bottom edges */
   .stage.fs .fs-btn { top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); }
-  .stage.fs .fs-rot { top: max(8px, env(safe-area-inset-top)); right: calc(max(8px, env(safe-area-inset-right)) + 82px); }
+  .stage.fs .fs-rot { top: max(8px, env(safe-area-inset-top)); right: calc(max(8px, env(safe-area-inset-right)) + 76px); }
   .stage.fs.rot .fs-btn { top: max(8px, env(safe-area-inset-right)); right: max(8px, env(safe-area-inset-bottom)); }
-  .stage.fs.rot .fs-rot { top: max(8px, env(safe-area-inset-right)); right: calc(max(8px, env(safe-area-inset-bottom)) + 82px); }
+  .stage.fs.rot .fs-rot { top: max(8px, env(safe-area-inset-right)); right: calc(max(8px, env(safe-area-inset-bottom)) + 76px); }
   .stage.fs.rot { width: 100vh; width: 100dvh; height: 100vw; inset: auto; top: 50%; left: 50%;
     transform: translate(-50%, -50%) rotate(90deg); }   /* ⟲ in full-window mode (iPhone) */
   .stage.fs.idle { cursor: none; }
@@ -733,7 +734,7 @@
     top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); }
   .cframe.rot .cfsbar { top: max(8px, env(safe-area-inset-right)); right: max(8px, env(safe-area-inset-bottom)); }
   .cframe:fullscreen .cfsbar, .cframe.fill .cfsbar { display: flex; }
-  .cfsbar button { min-height: 34px; padding: 4px 10px; font-size: 13px; color: #fff; background: rgba(10, 18, 48, .75); }
+  .cfsbar button { min-height: 30px; padding: 3px 9px; font-size: 12.5px; color: #fff; background: rgba(10, 18, 48, .75); }
   .cfsbar button[aria-pressed="true"] { background: #2E4189; }
   .cframe.fill.rot { width: 100vh !important; width: 100dvh !important; height: 100vw !important; inset: auto; top: 50%; left: 50%;
     transform: translate(-50%, -50%) rotate(90deg); }   /* ⟲ where the phone won't turn itself (iPhone, window-fill mode) */
